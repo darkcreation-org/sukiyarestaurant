@@ -36,20 +36,43 @@ export default function StatusSelect({
     }
   };
 
+  const statusColors: Record<OrderStatus, { bg: string; text: string; border: string }> = {
+    Received: {
+      bg: "bg-[#E3F2FD]",
+      text: "text-[#1976D2]",
+      border: "border-[#1976D2]",
+    },
+    Preparing: {
+      bg: "bg-[#FFF3E0]",
+      text: "text-[#F57C00]",
+      border: "border-[#F57C00]",
+    },
+    Ready: {
+      bg: "bg-[#E8F5E9]",
+      text: "text-[#06C755]",
+      border: "border-[#06C755]",
+    },
+    Completed: {
+      bg: "bg-[#E8F5E9]",
+      text: "text-[#00C300]",
+      border: "border-[#00C300]",
+    },
+  };
+
+  const statusStyle = statusColors[status] || {
+    bg: "bg-gray-100",
+    text: "text-gray-800",
+    border: "border-gray-300",
+  };
+
   return (
     <select
       value={status}
       onChange={handleChange}
       disabled={isUpdating}
-      className={`text-xs font-medium rounded-md border-0 py-1.5 pl-3 pr-8 focus:ring-2 focus:ring-inset ${
-        status === "Received"
-          ? "bg-blue-50 text-blue-800 focus:ring-blue-500"
-          : status === "Preparing"
-          ? "bg-yellow-50 text-yellow-800 focus:ring-yellow-500"
-          : status === "Ready"
-          ? "bg-orange-50 text-orange-800 focus:ring-orange-500"
-          : "bg-green-50 text-green-800 focus:ring-green-500"
-      } ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+      className={`text-sm font-bold rounded-xl border-2 ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border} py-2 px-4 pr-8 focus:ring-2 focus:ring-[#06C755]/20 focus:outline-none transition-all duration-200 min-h-[44px] touch-manipulation shadow-sm hover:shadow-md ${
+        isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-95"
+      }`}
     >
       <option value="Received">Received</option>
       <option value="Preparing">Preparing</option>
