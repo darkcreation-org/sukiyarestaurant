@@ -6,16 +6,38 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status, className = "" }: StatusBadgeProps) {
-  const statusStyles: Record<OrderStatus, string> = {
-    Received: "bg-blue-100 text-blue-800",
-    Preparing: "bg-yellow-100 text-yellow-800",
-    Ready: "bg-orange-100 text-orange-800",
-    Completed: "bg-green-100 text-green-800",
+  const statusStyles: Record<OrderStatus, { bg: string; text: string; border: string }> = {
+    Received: {
+      bg: "bg-[#E3F2FD]",
+      text: "text-[#1976D2]",
+      border: "border-[#1976D2]",
+    },
+    Preparing: {
+      bg: "bg-[#FFF3E0]",
+      text: "text-[#F57C00]",
+      border: "border-[#F57C00]",
+    },
+    Ready: {
+      bg: "bg-[#E8F5E9]",
+      text: "text-[#06C755]",
+      border: "border-[#06C755]",
+    },
+    Completed: {
+      bg: "bg-[#E8F5E9]",
+      text: "text-[#00C300]",
+      border: "border-[#00C300]",
+    },
+  };
+
+  const statusStyle = statusStyles[status] || {
+    bg: "bg-gray-100",
+    text: "text-gray-800",
+    border: "border-gray-300",
   };
 
   return (
     <span
-      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusStyles[status]} ${className}`}
+      className={`inline-flex px-3 py-1.5 text-xs font-bold rounded-full border-2 shadow-sm ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border} ${className}`}
     >
       {status}
     </span>
