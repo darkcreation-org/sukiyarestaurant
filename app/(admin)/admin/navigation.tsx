@@ -7,16 +7,16 @@ export default function AdminNavigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-white border-b border-gray-200 shadow-sm">
+    <nav className="bg-gradient-to-r from-white via-blue-50 to-purple-50 border-b border-white/50 shadow-lg sticky top-0 z-40 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
+        <div className="flex justify-between h-20 md:h-24">
+          <div className="flex items-center w-full">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#06C755] via-[#00C300] to-[#06C755] bg-clip-text text-transparent drop-shadow-sm">
                 🍱 Sukiya Admin
               </h1>
             </div>
-            <div className="hidden sm:ml-8 sm:flex sm:space-x-8">
+            <div className="hidden sm:ml-8 sm:flex sm:space-x-3 md:space-x-4 flex-1">
               <NavLink href="/admin" pathname={pathname}>
                 Dashboard
               </NavLink>
@@ -31,8 +31,8 @@ export default function AdminNavigation() {
         </div>
       </div>
       {/* Mobile Navigation */}
-      <div className="sm:hidden border-t border-gray-200">
-        <div className="px-2 pt-2 pb-3 space-y-1">
+      <div className="sm:hidden border-t border-white/50 bg-gradient-to-b from-blue-50 to-purple-50 backdrop-blur-sm">
+        <div className="px-3 pt-3 pb-4 space-y-2">
           <MobileNavLink href="/admin" pathname={pathname}>
             Dashboard
           </MobileNavLink>
@@ -63,10 +63,10 @@ function NavLink({
   return (
     <Link
       href={href}
-      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+      className={`inline-flex items-center px-5 md:px-6 py-3 md:py-3.5 rounded-xl text-base md:text-lg font-bold transition-all duration-200 touch-manipulation active:scale-95 min-h-[48px] md:min-h-[52px] ${
         isActive
-          ? "border-green-500 text-gray-900"
-          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          ? "bg-gradient-to-r from-[#06C755] to-[#00C300] text-white shadow-lg active:shadow-xl"
+          : "text-gray-700 active:text-gray-900 active:bg-white/70 backdrop-blur-sm border border-white/50"
       }`}
     >
       {children}
@@ -89,10 +89,10 @@ function MobileNavLink({
   return (
     <Link
       href={href}
-      className={`block px-3 py-2 rounded-md text-base font-medium ${
+      className={`block px-5 py-4 rounded-xl text-lg font-bold transition-all duration-200 touch-manipulation active:scale-95 min-h-[56px] flex items-center ${
         isActive
-          ? "bg-green-50 text-green-700 border-l-4 border-green-500"
-          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          ? "bg-gradient-to-r from-[#06C755] to-[#00C300] text-white shadow-lg active:shadow-xl"
+          : "text-gray-700 active:bg-white active:text-gray-900"
       }`}
     >
       {children}
