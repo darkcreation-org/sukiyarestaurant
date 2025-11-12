@@ -5,10 +5,13 @@ import { useTheme } from "next-themes";
 export function ThemeToggle(){
     const {theme, setTheme} = useTheme();
     return(
-        <button
+        <div className="flex">
+            <button
             onClick={()=> setTheme(theme === "light" ? "dark" : "light")}
-        >
-            theme toggle
-        </button>
+            >
+                theme toggle
+            </button>
+        </div>
+        
     )
 }
