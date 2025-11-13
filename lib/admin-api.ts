@@ -1,5 +1,4 @@
-// Mock API functions for admin dashboard
-// These will be replaced with actual API calls later
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export type OrderStatus = "Received" | "Preparing" | "Ready" | "Completed";
 
@@ -10,7 +9,7 @@ export interface Order {
   displayName: string;
   tableNumber: string;
   items: Array<{
-    itemId: string;
+     itemId: string;
     name: string;
     quantity: number;
     price: number;
@@ -243,40 +242,69 @@ const mockMenuItems: MenuItem[] = [
   },
 ];
 
-// Mock menu API functions
 export async function getMenuItems(): Promise<MenuItem[]> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return mockMenuItems;
+  const response = await fetch(`${API_BASE_URL}/menu/all`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch menu items');
+  }
+  return response.json();
 }
 
 export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | "updatedAt">): Promise<MenuItem> {
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  const newItem: MenuItem = {
-    ...item,
-    _id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  mockMenuItems.push(newItem);
-  return newItem;
+  try {
+    const response = await fetch(`${API_BASE_URL}/menu`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(item),
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to create menu item';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to create menu item');
+  }
 }
 
 export async function updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<MenuItem> {
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  const item = mockMenuItems.find((m) => m._id === id);
-  if (!item) {
-    throw new Error("Menu item not found");
+  const response = await fetch(`${API_BASE_URL}/menu/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updates),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Failed to update menu item' }));
+    throw new Error(error.error || 'Failed to update menu item');
   }
-  Object.assign(item, updates, { updatedAt: new Date().toISOString() });
-  return item;
+  
+  return response.json();
 }
 
 export async function deleteMenuItem(id: string): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  const itemIndex = mockMenuItems.findIndex((m) => m._id === id);
-  if (itemIndex === -1) {
-    throw new Error("Menu item not found");
+  const response = await fetch(`${API_BASE_URL}/menu/${id}`, {
+    method: 'DELETE',
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Failed to delete menu item' }));
+    throw new Error(error.error || 'Failed to delete menu item');
   }
-  mockMenuItems.splice(itemIndex, 1);
 }
 
