@@ -75,3 +75,101 @@
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
 }
+
+/* React DatePicker Custom Styles */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker__input-container {
+  width: 100%;
+}
+
+.react-datepicker__input-container input {
+  width: 100%;
+  cursor: pointer;
+}
+
+.react-datepicker {
+  font-family: inherit;
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  background: white;
+}
+
+.react-datepicker__header {
+  background: linear-gradient(to right, #06C755, #00C300);
+  border-bottom: none;
+  border-radius: 0.875rem 0.875rem 0 0;
+  padding-top: 1rem;
+}
+
+.react-datepicker__current-month {
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.react-datepicker__day-name {
+  color: white;
+  font-weight: 600;
+  width: 2.5rem;
+  line-height: 2.5rem;
+}
+
+.react-datepicker__day {
+  width: 2.5rem;
+  line-height: 2.5rem;
+  border-radius: 0.5rem;
+  margin: 0.125rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.react-datepicker__day:hover {
+  background-color: #06C755;
+  color: white;
+  border-radius: 0.5rem;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background: linear-gradient(to right, #06C755, #00C300);
+  color: white;
+  font-weight: bold;
+  border-radius: 0.5rem;
+}
+
+.react-datepicker__day--selected:hover,
+.react-datepicker__day--keyboard-selected:hover {
+  background: linear-gradient(to right, #05b04a, #00b300);
+}
+
+.react-datepicker__day--today {
+  font-weight: bold;
+  border: 2px solid #06C755;
+}
+
+.react-datepicker__day--disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.react-datepicker__triangle {
+  display: none;
+}
+
+.react-datepicker__navigation {
+  top: 1rem;
+}
+
+.react-datepicker__navigation-icon::before {
+  border-color: white;
+  border-width: 2px 2px 0 0;
+}
+
+.react-datepicker__navigation:hover *::before {
+  border-color: rgba(255, 255, 255, 0.8);
+}
