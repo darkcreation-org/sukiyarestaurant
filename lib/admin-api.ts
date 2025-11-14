@@ -1,4 +1,7 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+// Mock API functions for admin dashboard
+// These will be replaced with actual API calls later
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 export type OrderStatus = "Received" | "Preparing" | "Ready" | "Completed";
 
@@ -32,222 +35,123 @@ export interface MenuItem {
   updatedAt: string;
 }
 
-// Mock orders data
-const mockOrders: Order[] = [
-  {
-    _id: "1",
-    orderId: "ORD12345",
-    userId: "user1",
-    displayName: "John Doe",
-    tableNumber: "T05",
-    items: [
-      { itemId: "1", name: "Sukiyaki Set", quantity: 2, price: 1500 },
-      { itemId: "2", name: "Miso Soup", quantity: 2, price: 200 },
-    ],
-    total: 3400,
-    status: "Received",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "2",
-    orderId: "ORD12344",
-    userId: "user2",
-    displayName: "Jane Smith",
-    tableNumber: "T03",
-    items: [
-      { itemId: "3", name: "Teriyaki Bowl", quantity: 1, price: 1200 },
-      { itemId: "4", name: "Salad", quantity: 1, price: 400 },
-    ],
-    total: 1600,
-    status: "Preparing",
-    createdAt: new Date(Date.now() - 5 * 60000).toISOString(),
-    updatedAt: new Date(Date.now() - 5 * 60000).toISOString(),
-  },
-  {
-    _id: "3",
-    orderId: "ORD12343",
-    userId: "user3",
-    displayName: "Bob Johnson",
-    tableNumber: "T01",
-    items: [
-      { itemId: "5", name: "Premium Set", quantity: 3, price: 2500 },
-    ],
-    total: 7500,
-    status: "Ready",
-    createdAt: new Date(Date.now() - 10 * 60000).toISOString(),
-    updatedAt: new Date(Date.now() - 10 * 60000).toISOString(),
-  },
-  {
-    _id: "4",
-    orderId: "ORD12342",
-    userId: "user4",
-    displayName: "Alice Brown",
-    tableNumber: "T02",
-    items: [
-      { itemId: "1", name: "Sukiyaki Set", quantity: 1, price: 1500 },
-      { itemId: "6", name: "Green Tea", quantity: 2, price: 150 },
-    ],
-    total: 1800,
-    status: "Completed",
-    createdAt: new Date(Date.now() - 30 * 60000).toISOString(),
-    updatedAt: new Date(Date.now() - 25 * 60000).toISOString(),
-  },
-];
+export type UserRole = "customer" | "staff" | "admin" | "manager";
 
-// Mock API functions
+export interface User {
+  _id: string;
+  userId: string;
+  displayName: string;
+  email?: string;
+  phone?: string;
+  role: UserRole;
+  totalOrders: number;
+  totalSpent: number;
+  lastOrderDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+}
+
+// Order API functions - Fetch from MongoDb
 export async function getOrders(): Promise<Order[]> {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return mockOrders;
+  try {
+    const response = await fetch(`${API_BASE_URL}/orders`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch orders';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to fetch orders');
+  }
 }
 
 export async function updateOrderStatus(
   orderId: string,
   status: Order["status"]
 ): Promise<Order> {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  const order = mockOrders.find((o) => o.orderId === orderId);
-  if (!order) {
-    throw new Error("Order not found");
+  try {
+    const response = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status }),
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to update order status';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to update order status');
   }
-  order.status = status;
-  order.updatedAt = new Date().toISOString();
-  return order;
 }
 
-// Mock menu items data
-const mockMenuItems: MenuItem[] = [
-  {
-    _id: "1",
-    nameEn: "Sukiyaki Set",
-    nameJp: "すき焼きセット",
-    price: 1500,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Main Course",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "2",
-    nameEn: "Teriyaki Bowl",
-    nameJp: "照り焼き丼",
-    price: 1200,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Main Course",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "3",
-    nameEn: "Miso Soup",
-    nameJp: "味噌汁",
-    price: 200,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Appetizer",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "4",
-    nameEn: "Premium Set",
-    nameJp: "プレミアムセット",
-    price: 2500,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Main Course",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "5",
-    nameEn: "Salad",
-    nameJp: "サラダ",
-    price: 400,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Appetizer",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "6",
-    nameEn: "Green Tea",
-    nameJp: "緑茶",
-    price: 150,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Drink",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "7",
-    nameEn: "Tempura",
-    nameJp: "天ぷら",
-    price: 800,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Appetizer",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "8",
-    nameEn: "Matcha Ice Cream",
-    nameJp: "抹茶アイスクリーム",
-    price: 500,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Dessert",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "9",
-    nameEn: "Sushi Platter",
-    nameJp: "寿司盛り合わせ",
-    price: 3000,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Main Course",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "10",
-    nameEn: "Rice",
-    nameJp: "ご飯",
-    price: 200,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Side Dish",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "11",
-    nameEn: "Soda",
-    nameJp: "ソーダ",
-    price: 250,
-    imageUrl: "https://via.placeholder.com/150",
-    category: "Drink",
-    isActive: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
+// Menu API functions - Fetch from MongoDB via backend only
 export async function getMenuItems(): Promise<MenuItem[]> {
-  const response = await fetch(`${API_BASE_URL}/menu/all`);
-  if (!response.ok) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/menu`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch menu items';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
     throw new Error('Failed to fetch menu items');
   }
-  return response.json();
 }
 
 export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | "updatedAt">): Promise<MenuItem> {
@@ -273,6 +177,9 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
     
     return response.json();
   } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
     if (error instanceof Error) {
       throw error;
     }
@@ -281,30 +188,240 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
 }
 
 export async function updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<MenuItem> {
-  const response = await fetch(`${API_BASE_URL}/menu/${id}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(updates),
-  });
-  
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to update menu item' }));
-    throw new Error(error.error || 'Failed to update menu item');
+  try {
+    const response = await fetch(`${API_BASE_URL}/menu/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to update menu item';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+        errorMessage = `${errorMessage} (Status: ${response.status})`;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to update menu item');
   }
-  
-  return response.json();
 }
 
 export async function deleteMenuItem(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/menu/${id}`, {
-    method: 'DELETE',
-  });
-  
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Failed to delete menu item' }));
-    throw new Error(error.error || 'Failed to delete menu item');
+  try {
+    const response = await fetch(`${API_BASE_URL}/menu/${id}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to delete menu item';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+        errorMessage = `${errorMessage} (Status: ${response.status})`;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to delete menu item');
+  }
+}
+
+// User Management API Functions
+export async function getUsers(): Promise<User[]> {
+  try {
+    // Try to fetch from backend API first
+    const response = await fetch(`${API_BASE_URL}/users`);
+    if (response.ok) {
+      return response.json();
+    }
+    // If backend API doesn't exist, extract users from orders
+    const orders = await getOrders();
+    const userMap = new Map<string, {
+      userId: string;
+      displayName: string;
+      totalOrders: number;
+      totalSpent: number;
+      lastOrderDate?: string;
+      orders: Order[];
+    }>();
+
+    orders.forEach((order) => {
+      const existing = userMap.get(order.userId);
+      if (existing) {
+        existing.totalOrders += 1;
+        existing.totalSpent += order.total;
+        if (!existing.lastOrderDate || new Date(order.createdAt) > new Date(existing.lastOrderDate)) {
+          existing.lastOrderDate = order.createdAt;
+        }
+        existing.orders.push(order);
+      } else {
+        userMap.set(order.userId, {
+          userId: order.userId,
+          displayName: order.displayName,
+          totalOrders: 1,
+          totalSpent: order.total,
+          lastOrderDate: order.createdAt,
+          orders: [order],
+        });
+      }
+    });
+
+    const users: User[] = Array.from(userMap.values()).map((userData, index) => ({
+      _id: `user_${index + 1}`,
+      userId: userData.userId,
+      displayName: userData.displayName,
+      role: "customer" as UserRole,
+      totalOrders: userData.totalOrders,
+      totalSpent: userData.totalSpent,
+      lastOrderDate: userData.lastOrderDate,
+      createdAt: userData.orders[0]?.createdAt || new Date().toISOString(),
+      updatedAt: userData.lastOrderDate || new Date().toISOString(),
+      isActive: true,
+    }));
+
+    return users;
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      // If backend is not available, try to get from orders
+      try {
+        const orders = await getOrders();
+        const userMap = new Map<string, {
+          userId: string;
+          displayName: string;
+          totalOrders: number;
+          totalSpent: number;
+          lastOrderDate?: string;
+          orders: Order[];
+        }>();
+
+        orders.forEach((order) => {
+          const existing = userMap.get(order.userId);
+          if (existing) {
+            existing.totalOrders += 1;
+            existing.totalSpent += order.total;
+            if (!existing.lastOrderDate || new Date(order.createdAt) > new Date(existing.lastOrderDate)) {
+              existing.lastOrderDate = order.createdAt;
+            }
+            existing.orders.push(order);
+          } else {
+            userMap.set(order.userId, {
+              userId: order.userId,
+              displayName: order.displayName,
+              totalOrders: 1,
+              totalSpent: order.total,
+              lastOrderDate: order.createdAt,
+              orders: [order],
+            });
+          }
+        });
+
+        const users: User[] = Array.from(userMap.values()).map((userData, index) => ({
+          _id: `user_${index + 1}`,
+          userId: userData.userId,
+          displayName: userData.displayName,
+          role: "customer" as UserRole,
+          totalOrders: userData.totalOrders,
+          totalSpent: userData.totalSpent,
+          lastOrderDate: userData.lastOrderDate,
+          createdAt: userData.orders[0]?.createdAt || new Date().toISOString(),
+          updatedAt: userData.lastOrderDate || new Date().toISOString(),
+          isActive: true,
+        }));
+
+        return users;
+      } catch (innerError) {
+        throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running.`);
+      }
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to fetch users');
+  }
+}
+
+export async function updateUser(id: string, updates: Partial<User>): Promise<User> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to update user';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+        errorMessage = `${errorMessage} (Status: ${response.status})`;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to update user');
+  }
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to delete user';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+        errorMessage = `${errorMessage} (Status: ${response.status})`;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to delete user');
   }
 }
 
