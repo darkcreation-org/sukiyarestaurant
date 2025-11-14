@@ -165,13 +165,47 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
     });
     
     if (!response.ok) {
+      // Log response details first
+      console.error('Backend error - Status:', response.status, response.statusText);
+      console.error('Backend error - Headers:', Object.fromEntries(response.headers.entries()));
+      
       let errorMessage = 'Failed to create menu item';
+      let errorData: any = null;
+      
       try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch {
+        // Clone the response to read it without consuming it
+        const responseClone = response.clone();
+        const text = await responseClone.text();
+        console.error('Backend error - Raw response text:', text);
+        
+        // Try to parse as JSON
+        if (text && text.trim().length > 0) {
+          try {
+            errorData = JSON.parse(text);
+            console.error('Backend error - Parsed JSON:', errorData);
+          } catch (jsonError) {
+            console.error('Backend error - Not valid JSON, using text as error message');
+            errorMessage = text || `Server error: ${response.status} ${response.statusText}`;
+          }
+        } else {
+          console.error('Backend error - Empty response body');
+          errorMessage = `Server error: ${response.status} ${response.statusText} (Empty response)`;
+        }
+        
+        // Extract error message from parsed data
+        if (errorData) {
+          errorMessage = errorData.error || errorData.message || errorData.details || errorMessage;
+          
+          // If there are missing fields, include them in the error
+          if (errorData.missingFields && Array.isArray(errorData.missingFields)) {
+            errorMessage = `${errorMessage} (Missing: ${errorData.missingFields.join(', ')})`;
+          }
+        }
+      } catch (parseError) {
+        console.error('Backend error - Failed to read response:', parseError);
         errorMessage = `Server error: ${response.status} ${response.statusText}`;
       }
+      
       throw new Error(errorMessage);
     }
     

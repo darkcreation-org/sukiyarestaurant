@@ -82,7 +82,9 @@ export default function AddFoodModal({
       onClose();
     } catch (err) {
       console.error("Failed to create menu item:", err);
-      setError("Failed to create menu item. Please try again.");
+      // Display the actual error message from the API
+      const errorMessage = err instanceof Error ? err.message : "Failed to create menu item. Please try again.";
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

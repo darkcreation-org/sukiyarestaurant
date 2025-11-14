@@ -90,7 +90,9 @@ export default function EditFoodModal({
       onClose();
     } catch (err) {
       console.error("Failed to update menu item:", err);
-      setError("Failed to update menu item. Please try again.");
+      // Display the actual error message from the API
+      const errorMessage = err instanceof Error ? err.message : "Failed to update menu item. Please try again.";
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
