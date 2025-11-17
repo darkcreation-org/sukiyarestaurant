@@ -11,6 +11,7 @@ export default function Home() {
           <MenuItemCard />
           <MenuItemCard />
           <MenuItemCard />
+          
         </div>
       </div>
       

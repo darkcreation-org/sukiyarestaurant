@@ -2,31 +2,27 @@
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { useState } from "react";
-
-interface MenuItem {
-    id:string;
-    title:string;
-    price:number;
-    description:string;
-}
+import { IMenuItem } from "@/types/menu-types"
 
 interface ItemDetails {
     isOpen:boolean;
     isClose: ()=> void;
-    item:MenuItem;
+    item:IMenuItem;
 }
 
 const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
     if(!isOpen) return false;
     const [dishQuantity, setDishQuantity] = useState(1);
     const [amount, setAmount] = useState(item.price);
+    //increase quntity
     const IncreaseQuantity = ()=> {
-        setDishQuantity(dishQuantity+1);
-        setAmount(amount+item.price);
+        setDishQuantity( prev => prev + 1 );
+        setAmount( prev => prev +item.price );
     };
+    //decrease quantity
     const DecreaseQuantity = ()=> {
-        setDishQuantity(dishQuantity > 1? dishQuantity-1 : 1 );
-        setAmount(dishQuantity > 1? amount-item.price : item.price);
+        setDishQuantity( prev => prev > 1? prev - 1 : 1 );
+        setAmount( prev => dishQuantity > 1? prev - item.price : item.price );
     };
 
     return(
@@ -34,13 +30,15 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
         onClick={isClose}
         >
             <div className="relative  max-w-[95%] w-full max-h-[90vh] md:w-[560px]">
-            <div className="bg-white w-full h-full rounded-tr-[42px] overflow-hidden overflow-y-auto shadow-[4px_5px_13px_#695f5f]">
+            <div className="bg-white w-full h-full rounded-tr-[42px] overflow-hidden overflow-y-auto shadow-[4px_5px_13px_#695f5f]"
+             onClick={(e) => e.stopPropagation()}
+            >
 
-                <div className="flex flex-col relative gap-2" onClick={(e) => e.stopPropagation()}>
+                <div className="flex flex-col relative gap-2">
                     <div className="relative w-full h-[175px] md:h-[280px]">
                         <Image 
                         src="/kottu.jpg" 
-                        alt="" 
+                        alt={item.title} 
                         fill style={{objectFit:"cover"}}
                         />
                         <div className="bg-red-500 bg-opacity-90 text-white font-bold px-2 py-1 absolute right-0 bottom-0">Price: <span>{item.price}&yen;</span></div>
@@ -84,9 +82,6 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
     )
 };
 
-
-
-
 const MenuItemCard = () => {
     const [isModelOpen, setIsModelOpen] = useState(false);
     const isOpen = ()=> setIsModelOpen(true);
@@ -95,7 +90,9 @@ const MenuItemCard = () => {
          id:"12",
          title:"Kaiseki Ryori",
          price:125,
-         description: "Lorem ipsumneque eum id maxime reiciendis tempora! Iste, eveniet architecto quis, doloribus maiores blanditiis eos facere consequatur perferendis, veritatis consequuntur possimus aspernatur assumenda veniam voluptatum quos! Animi, nobis! At quae quo recusandae, quaerat dolorum iusto vel facilis.Perspiciatis consequatur repudiandae exercitationem assumenda neque! Minima, fugiat laborum sapiente rerum, rem eum minus voluptate ea amet, beatae facilis esse voluptatem maiores dolorum velit magni eligendi vel quaerat consectetur quo?",   
+         image:"/kottu.jpg",
+         description: "Lorem ipsumneque eum id maxime reiciendis tempora! Iste, eveniet architecto quis, doloribus maiores blanditiis eos facere consequatur perferendis, veritatis consequuntur possimus aspernatur assumenda veniam voluptatum quos! Animi, nobis! At quae quo recusandae, quaerat dolorum iusto vel facilis.Perspiciatis consequatur repudiandae exercitationem assumenda neque! Minima, fugiat laborum sapiente rerum, rem eum minus voluptate ea amet, beatae facilis esse voluptatem maiores dolorum velit magni eligendi vel quaerat consectetur quo?",
+         isAvailable:true, 
     }
     return(
         <>
