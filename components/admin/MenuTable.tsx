@@ -43,7 +43,12 @@ export default function MenuTable() {
 
   const handleToggleStatus = async (item: MenuItem) => {
     try {
-      await updateMenuItem(item._id, { isActive: !item.isActive });
+      const itemId = item._id || (item as any).id;
+      if (!itemId) {
+        console.error("Invalid menu item: missing ID");
+        return;
+      }
+      await updateMenuItem(itemId, { isActive: !item.isActive });
       handleRefresh();
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -55,7 +60,12 @@ export default function MenuTable() {
       return;
     }
     try {
-      await deleteMenuItem(item._id);
+      const itemId = item._id || (item as any).id;
+      if (!itemId) {
+        console.error("Invalid menu item: missing ID");
+        return;
+      }
+      await deleteMenuItem(itemId);
       handleRefresh();
     } catch (error) {
       console.error("Failed to delete item:", error);
@@ -129,7 +139,7 @@ export default function MenuTable() {
               <tbody className="bg-white divide-y divide-gray-100">
                 {menuItems.map((item, index) => (
                   <tr
-                    key={item._id || `menu-item-${index}`}
+                    key={(item._id || (item as any).id) || `menu-item-${index}`}
                     className="hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100/50 transition-all duration-200 group"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
