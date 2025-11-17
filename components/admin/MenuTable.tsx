@@ -129,7 +129,7 @@ export default function MenuTable() {
               <tbody className="bg-white divide-y divide-gray-100">
                 {menuItems.map((item, index) => (
                   <tr
-                    key={item._id}
+                    key={item._id || `menu-item-${index}`}
                     className="hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100/50 transition-all duration-200 group"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
