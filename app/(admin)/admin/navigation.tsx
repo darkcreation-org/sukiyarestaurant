@@ -1,10 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 export default function AdminNavigation() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/admin/login");
+  };
 
   return (
     <nav className="bg-gradient-to-r from-white via-blue-50 to-purple-50 border-b border-white/50 shadow-lg sticky top-0 z-40 backdrop-blur-md">
@@ -30,6 +38,20 @@ export default function AdminNavigation() {
                 Users
               </NavLink>
             </div>
+            <div className="flex items-center gap-3">
+              {user && (
+                <div className="hidden sm:block text-sm text-gray-600 font-medium">
+                  {user.displayName} ({user.role})
+                </div>
+              )}
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-all duration-200 active:scale-95 touch-manipulation min-h-[44px] flex items-center gap-2"
+              >
+                <span>🚪</span>
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -48,6 +70,18 @@ export default function AdminNavigation() {
           <MobileNavLink href="/admin/users" pathname={pathname}>
             Users
           </MobileNavLink>
+          {user && (
+            <div className="px-5 py-4 text-sm text-gray-600 font-medium border-t border-white/50">
+              {user.displayName} ({user.role})
+            </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="w-full px-5 py-4 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-all duration-200 active:scale-95 touch-manipulation min-h-[56px] flex items-center justify-center gap-2 mt-2"
+          >
+            <span>🚪</span>
+            <span>Logout</span>
+          </button>
         </div>
       </div>
     </nav>

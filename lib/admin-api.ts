@@ -52,14 +52,158 @@ export interface User {
   isActive: boolean;
 }
 
+export interface AuthUser {
+  _id: string;
+  id: string;
+  userId: string;
+  displayName: string;
+  email?: string;
+  phone?: string;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: AuthUser;
+}
+
+// Authentication API functions
+export async function login(userId: string, password: string): Promise<LoginResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, password }),
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to login';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to login');
+  }
+}
+
+export async function verifyToken(token: string): Promise<{ valid: boolean; user: AuthUser }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to verify token';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to verify token');
+  }
+}
+
+export async function setPassword(userId: string, password: string): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/set-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, password }),
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to set password';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to set password');
+  }
+}
+
+// Helper function to get auth token from localStorage
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('admin_token');
+}
+
+// Helper function to set auth token in localStorage
+export function setAuthToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('admin_token', token);
+}
+
+// Helper function to remove auth token from localStorage
+export function removeAuthToken(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('admin_token');
+}
+
+// Helper function to get auth headers
+export function getAuthHeaders(): HeadersInit {
+  const token = getAuthToken();
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 // Order API functions - Fetch from MongoDb
 export async function getOrders(): Promise<Order[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/orders`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
@@ -92,9 +236,7 @@ export async function updateOrderStatus(
   try {
     const response = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ status }),
     });
     
@@ -126,9 +268,7 @@ export async function getMenuItems(): Promise<MenuItem[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/menu`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
@@ -158,9 +298,7 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
   try {
     const response = await fetch(`${API_BASE_URL}/menu`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(item),
     });
     
@@ -225,9 +363,7 @@ export async function updateMenuItem(id: string, updates: Partial<MenuItem>): Pr
   try {
     const response = await fetch(`${API_BASE_URL}/menu/${id}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(updates),
     });
     
@@ -259,6 +395,7 @@ export async function deleteMenuItem(id: string): Promise<void> {
   try {
     const response = await fetch(`${API_BASE_URL}/menu/${id}`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
@@ -288,9 +425,7 @@ export async function getUsers(): Promise<User[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/users`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
@@ -320,9 +455,7 @@ export async function createUser(user: Omit<User, "_id" | "createdAt" | "updated
   try {
     const response = await fetch(`${API_BASE_URL}/users`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(user),
     });
     
@@ -357,9 +490,7 @@ export async function updateUser(id: string, updates: Partial<User>): Promise<Us
   try {
     const response = await fetch(`${API_BASE_URL}/users/${id}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(updates),
     });
     
@@ -391,6 +522,7 @@ export async function deleteUser(id: string): Promise<void> {
   try {
     const response = await fetch(`${API_BASE_URL}/users/${id}`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
