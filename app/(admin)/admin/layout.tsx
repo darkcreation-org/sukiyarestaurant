@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import AdminNavigation from "./navigation";
 import AuthGuard from "./auth-guard";
 
@@ -8,6 +9,14 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === "/admin/login";
+
+  // Don't apply AuthGuard and navigation to login page
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 via-purple-50 to-pink-50 touch-manipulation">
