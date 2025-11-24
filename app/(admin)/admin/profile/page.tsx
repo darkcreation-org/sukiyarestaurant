@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { updateUser, getUsers } from "@/lib/admin-api";
+import { updateUser, getUserById } from "@/lib/admin-api";
 import type { User } from "@/lib/admin-api";
 
 export default function ProfilePage() {
-  const { user: currentUser, login } = useAuth();
+  const { user: currentUser, refreshUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -25,19 +25,23 @@ export default function ProfilePage() {
       
       try {
         setLoading(true);
-        const users = await getUsers();
-        const foundUser = users.find((u) => u._id === currentUser._id || u._id === currentUser.id);
-        if (foundUser) {
-          setUser(foundUser);
-          setFormData({
-            displayName: foundUser.displayName,
-            email: foundUser.email || "",
-            phone: foundUser.phone || "",
-          });
+        const userId = currentUser._id || currentUser.id;
+        if (!userId) {
+          setError("User ID not found");
+          return;
         }
+        
+        const userData = await getUserById(userId);
+        setUser(userData);
+        setFormData({
+          displayName: userData.displayName,
+          email: userData.email || "",
+          phone: userData.phone || "",
+        });
       } catch (error) {
         console.error("Failed to fetch user profile:", error);
-        setError("Failed to load profile information");
+        const errorMessage = error instanceof Error ? error.message : "Failed to load profile information";
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -75,18 +79,17 @@ export default function ProfilePage() {
 
     try {
       const userId = user._id || (user as any).id;
-      await updateUser(userId, {
+      const updatedUser = await updateUser(userId, {
         displayName: formData.displayName.trim(),
         email: formData.email.trim() || undefined,
         phone: formData.phone.trim() || undefined,
       });
 
-      // Refresh user data
-      const users = await getUsers();
-      const updatedUser = users.find((u) => u._id === userId);
-      if (updatedUser) {
-        setUser(updatedUser);
-      }
+      // Update user data with the response
+      setUser(updatedUser);
+      
+      // Refresh auth context to update user data globally
+      await refreshUser();
 
       setSuccess("Profile updated successfully!");
       setIsEditing(false);

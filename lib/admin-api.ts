@@ -458,6 +458,78 @@ export async function getUsers(): Promise<User[]> {
   }
 }
 
+export async function getUserById(id: string): Promise<User> {
+  try {
+    // Try to fetch directly by ID first
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    
+    if (response.ok) {
+      return response.json();
+    }
+    
+    // If endpoint doesn't exist (404), fall back to fetching all users and filtering
+    if (response.status === 404) {
+      const users = await getUsers();
+      const user = users.find((u) => u._id === id || (u as any).id === id);
+      if (user) {
+        return user;
+      }
+      throw new Error('User not found');
+    }
+    
+    // For other errors, throw with the error message
+    let errorMessage = 'Failed to fetch user';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      errorMessage = `Server error: ${response.status} ${response.statusText}`;
+    }
+    throw new Error(errorMessage);
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to fetch user');
+  }
+}
+
+export async function getUserByUserId(userId: string): Promise<User> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/userId/${userId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch user';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running on port 5001.`);
+    }
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to fetch user');
+  }
+}
+
 export async function createUser(user: Omit<User, "_id" | "createdAt" | "updatedAt" | "totalOrders" | "totalSpent" | "lastOrderDate">): Promise<User> {
   try {
     const response = await fetch(`${API_BASE_URL}/users`, {
