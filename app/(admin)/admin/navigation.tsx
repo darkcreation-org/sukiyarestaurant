@@ -34,9 +34,11 @@ export default function AdminNavigation() {
               <NavLink href="/admin/menu" pathname={pathname}>
                 Menu
               </NavLink>
-              <NavLink href="/admin/users" pathname={pathname}>
-                Users
-              </NavLink>
+              {(user?.role === "admin" || user?.role === "manager") && (
+                <NavLink href="/admin/users" pathname={pathname}>
+                  Users
+                </NavLink>
+              )}
             </div>
             <div className="flex items-center gap-3">
               {user && (
@@ -67,9 +69,11 @@ export default function AdminNavigation() {
           <MobileNavLink href="/admin/menu" pathname={pathname}>
             Menu
           </MobileNavLink>
-          <MobileNavLink href="/admin/users" pathname={pathname}>
-            Users
-          </MobileNavLink>
+          {(user?.role === "admin" || user?.role === "manager") && (
+            <MobileNavLink href="/admin/users" pathname={pathname}>
+              Users
+            </MobileNavLink>
+          )}
           {user && (
             <div className="px-5 py-4 text-sm text-gray-600 font-medium border-t border-white/50">
               {user.displayName} ({user.role})
