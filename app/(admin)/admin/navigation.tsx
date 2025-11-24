@@ -39,12 +39,26 @@ export default function AdminNavigation() {
                   Users
                 </NavLink>
               )}
+              <NavLink href="/admin/profile" pathname={pathname}>
+                Profile
+              </NavLink>
             </div>
             <div className="flex items-center gap-3">
               {user && (
-                <div className="hidden sm:block text-sm text-gray-600 font-medium">
-                  {user.displayName} ({user.role})
-                </div>
+                <>
+                  <Link
+                    href="/admin/profile"
+                    className="hidden sm:flex items-center gap-2 text-sm text-gray-600 font-medium hover:text-[#06C755] transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-white/50"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#06C755] to-[#00C300] flex items-center justify-center text-white font-bold text-sm shadow-md">
+                      {user.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold">{user.displayName}</span>
+                      <span className="text-xs text-gray-500">{user.role}</span>
+                    </div>
+                  </Link>
+                </>
               )}
               <button
                 onClick={handleLogout}
@@ -74,10 +88,22 @@ export default function AdminNavigation() {
               Users
             </MobileNavLink>
           )}
+          <MobileNavLink href="/admin/profile" pathname={pathname}>
+            Profile
+          </MobileNavLink>
           {user && (
-            <div className="px-5 py-4 text-sm text-gray-600 font-medium border-t border-white/50">
-              {user.displayName} ({user.role})
-            </div>
+            <Link
+              href="/admin/profile"
+              className="px-5 py-4 text-sm text-gray-600 font-medium border-t border-white/50 flex items-center gap-3 hover:bg-white/50 transition-colors duration-200"
+            >
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#06C755] to-[#00C300] flex items-center justify-center text-white font-bold shadow-md">
+                {user.displayName.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold">{user.displayName}</span>
+                <span className="text-xs text-gray-500">{user.role}</span>
+              </div>
+            </Link>
           )}
           <button
             onClick={handleLogout}
