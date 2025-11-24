@@ -1,13 +1,20 @@
-import { ThemeToggle } from "./theme-toggle";
+import MenuItemCard from "@/components/MenuItemCard";
 
 export default function Home() {
   return (
-    <div className="flex bg-background dark:bg-amber-300  transition-colors duration-300">
-      <div>
-        <h1>Hello!</h1>
-        <p>Toggle theme to test</p>
+    <main className="flex min-h-screen bg-background transition-colors duration-300">
+      <div className="inner-wrapper flex-col mt-[100px]">
+        <h1 className="">Hello!</h1>
+        <p>Warmly welcome to our restaurant</p>
+        <div className="grid grid-cols-2 gap-2 w-full md:grid-cols-3 lg:grid-cols-4 mt-8 md:gap-4">
+          <MenuItemCard />
+          <MenuItemCard />
+          <MenuItemCard />
+          <MenuItemCard />
+          
+        </div>
       </div>
-      <ThemeToggle />
-    </div>
+      
+    </main>
   );
 }
