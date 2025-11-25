@@ -68,7 +68,7 @@ export default function AdminDashboard() {
               Dashboard
             </h1>
             <p className="text-lg md:text-xl text-gray-600 font-medium">
-              Welcome back! Here's what's happening today.
+              Welcome back! Here&apos;s what&apos;s happening today.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    <p className="text-base md:text-lg font-bold text-white/90 uppercase tracking-wider">Today's Revenue</p>
+                    <p className="text-base md:text-lg font-bold text-white/90 uppercase tracking-wider">Today&apos;s Revenue</p>
                   </div>
                   <p className="text-5xl md:text-6xl lg:text-7xl font-black text-white mb-4 drop-shadow-2xl">
                     ¥{stats.totalRevenue.toLocaleString()}
