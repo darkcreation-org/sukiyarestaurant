@@ -73,12 +73,13 @@ export async function PATCH(
     };
 
     return NextResponse.json(transformedOrder);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating order status:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to update order status',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );

@@ -1,8 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { ObjectId } from 'mongodb';
 import { getMongoDb } from '@/lib/db';
 
+interface OrderItemDocument {
+  itemId: ObjectId;
+  name: string;
+  quantity: number;
+  price: number;
+}
+
 // GET /api/orders - Get all orders
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Use native MongoDB driver for more reliable querying
     const db = await getMongoDb();
@@ -36,7 +44,7 @@ export async function GET(request: NextRequest) {
     // Transform to match frontend format
     const transformedOrders = orders.map((order) => {
       const orderIdStr = order._id.toString();
-      const items = (orderItemsMap.get(orderIdStr) || []).map((item: any) => ({
+      const items = ((orderItemsMap.get(orderIdStr) || []) as OrderItemDocument[]).map((item) => ({
         itemId: item.itemId.toString(),
         name: item.name,
         quantity: item.quantity,
@@ -65,12 +73,13 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(transformedOrders);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching orders:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to fetch orders',
-        details: process.env.NODE_ENV === 'development' ? error?.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );

@@ -1,9 +1,9 @@
-import { CartState, CartAction, CartItem } from '@/types/cart-types';
+import { CartState, CartAction, ICartItem as CartItem } from '@/types/cart-types';
 
 // Helper function to calculate the total amount of the entire cart
 const calculateTotals = (items: CartItem[]): { totalCartAmount: number } => {
     const totalCartAmount = items.reduce((total, item) => total + item.totalAmount, 0);
-    return { totalCartAmount };w
+    return { totalCartAmount };
 };
 
 // Initial state for the cart

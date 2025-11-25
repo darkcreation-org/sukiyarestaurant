@@ -20,12 +20,13 @@ export async function POST(request: NextRequest) {
       valid: true,
       user,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error verifying token:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to verify token',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );

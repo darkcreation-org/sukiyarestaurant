@@ -309,7 +309,7 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
       console.error('Backend error - Headers:', Object.fromEntries(response.headers.entries()));
       
       let errorMessage = 'Failed to create menu item';
-      let errorData: any = null;
+      let errorData: Record<string, unknown> | null = null;
       
       try {
         // Clone the response to read it without consuming it
@@ -322,7 +322,7 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
           try {
             errorData = JSON.parse(text);
             console.error('Backend error - Parsed JSON:', errorData);
-          } catch (jsonError) {
+          } catch {
             console.error('Backend error - Not valid JSON, using text as error message');
             errorMessage = text || `Server error: ${response.status} ${response.statusText}`;
           }
@@ -333,7 +333,10 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
         
         // Extract error message from parsed data
         if (errorData) {
-          errorMessage = errorData.error || errorData.message || errorData.details || errorMessage;
+          const error = typeof errorData.error === 'string' ? errorData.error : undefined;
+          const message = typeof errorData.message === 'string' ? errorData.message : undefined;
+          const details = typeof errorData.details === 'string' ? errorData.details : undefined;
+          errorMessage = error || message || details || errorMessage;
           
           // If there are missing fields, include them in the error
           if (errorData.missingFields && Array.isArray(errorData.missingFields)) {
@@ -474,7 +477,7 @@ export async function getUserById(id: string): Promise<User> {
     // If endpoint doesn't exist (404), fall back to fetching all users and filtering
     if (response.status === 404) {
       const users = await getUsers();
-      const user = users.find((u) => u._id === id || (u as any).id === id);
+      const user = users.find((u) => u._id === id);
       if (user) {
         return user;
       }

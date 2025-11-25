@@ -25,7 +25,7 @@ export default function ProfilePage() {
       
       try {
         setLoading(true);
-        const userId = currentUser._id || currentUser.id;
+        const userId = currentUser._id || currentUser.id; // AuthUser has both _id and id
         if (!userId) {
           setError("User ID not found");
           return;
@@ -78,7 +78,7 @@ export default function ProfilePage() {
     setIsSubmitting(true);
 
     try {
-      const userId = user._id || (user as any).id;
+      const userId = user._id;
       const updatedUser = await updateUser(userId, {
         displayName: formData.displayName.trim(),
         email: formData.email.trim() || undefined,

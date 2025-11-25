@@ -92,12 +92,12 @@ export default function OrderTable() {
               <tbody className="bg-white divide-y divide-gray-100">
                 {orders.map((order, index) => (
                   <OrderRow
-                    key={(order._id || (order as any).id) || `order-${index}`}
+                    key={order._id || `order-${index}`}
                     order={order}
                     onStatusChange={(orderId, newStatus) => {
                       // Update local state (orderId is now the MongoDB _id)
                       const updateOrder = (o: Order) => {
-                        const oId = o._id || (o as any).id;
+                        const oId = o._id;
                         return oId === orderId ? { ...o, status: newStatus } : o;
                       };
                       setOrders((prev) => prev.map(updateOrder));

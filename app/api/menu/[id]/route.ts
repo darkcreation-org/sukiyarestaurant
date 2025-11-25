@@ -53,12 +53,13 @@ export async function PATCH(
     };
 
     return NextResponse.json(menuItem);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating menu item:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to update menu item',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );
@@ -88,12 +89,13 @@ export async function DELETE(
     }
 
     return NextResponse.json({ message: 'Menu item deleted successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting menu item:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to delete menu item',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );

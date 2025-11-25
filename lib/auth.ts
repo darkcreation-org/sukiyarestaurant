@@ -1,4 +1,5 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
+import type { StringValue } from 'ms';
 import { ObjectId } from 'mongodb';
 import { getMongoDb } from './db';
 
@@ -17,7 +18,11 @@ export function verifyToken(token: string): JwtPayload {
 }
 
 export function generateToken(payload: JwtPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  const expiresInValue = (JWT_EXPIRES_IN as StringValue) || ('7d' as StringValue);
+  const signOptions: SignOptions = {
+    expiresIn: expiresInValue,
+  };
+  return jwt.sign(payload, JWT_SECRET, signOptions);
 }
 
 export async function verifyUserFromToken(token: string) {

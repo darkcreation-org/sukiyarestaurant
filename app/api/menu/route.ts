@@ -3,6 +3,18 @@ import { ObjectId } from 'mongodb';
 import { getMongoDb } from '@/lib/db';
 import { getAuthTokenFromHeader } from '@/lib/auth';
 
+interface MenuItemDocument {
+  _id: ObjectId;
+  nameEn: string;
+  nameJp: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // GET /api/menu - Get menu items (all items for admin, only active for public)
 export async function GET(request: NextRequest) {
   try {
@@ -21,22 +33,19 @@ export async function GET(request: NextRequest) {
       .toArray();
 
     // Normalize response to include _id field
-    const normalizedItems = menuItems.map((item: any) => ({
-      ...item,
-      _id: item._id.toString(),
-      id: item._id.toString(),
-      createdAt:
-        item.createdAt instanceof Date
-          ? item.createdAt.toISOString()
-          : new Date(item.createdAt).toISOString(),
-      updatedAt:
-        item.updatedAt instanceof Date
-          ? item.updatedAt.toISOString()
-          : new Date(item.updatedAt).toISOString(),
-    }));
+    const normalizedItems = (menuItems as MenuItemDocument[]).map((item) => {
+      const itemId = item._id.toString();
+      return {
+        ...item,
+        _id: itemId,
+        id: itemId,
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString(),
+      };
+    });
 
     return NextResponse.json(normalizedItems);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching menu items:', error);
     return NextResponse.json({ error: 'Failed to fetch menu items' }, { status: 500 });
   }
@@ -107,12 +116,13 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(menuItem, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating menu item:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to create menu item',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );

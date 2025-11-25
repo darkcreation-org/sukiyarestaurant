@@ -56,9 +56,9 @@ export default function OrderRow({ order, onStatusChange }: OrderRowProps) {
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <StatusSelect
-          orderId={order._id || (order as any).id}
+          orderId={order._id}
           currentStatus={order.status}
-          onStatusChange={(newStatus) => onStatusChange(order._id || (order as any).id, newStatus)}
+          onStatusChange={(newStatus) => onStatusChange(order._id, newStatus)}
         />
       </td>
     </tr>

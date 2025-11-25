@@ -63,12 +63,13 @@ export async function GET(
     };
 
     return NextResponse.json(userWithStats);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching user:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to fetch user',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );
@@ -90,7 +91,7 @@ export async function PATCH(
 
     // Use native MongoDB driver for writes
     const db = await getMongoDb();
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updatedAt: new Date(),
     };
 
@@ -161,12 +162,13 @@ export async function PATCH(
     };
 
     return NextResponse.json(user);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating user:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to update user',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );
@@ -196,12 +198,13 @@ export async function DELETE(
     }
 
     return NextResponse.json({ message: 'User deleted successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting user:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to delete user',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );

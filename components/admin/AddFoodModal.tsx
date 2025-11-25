@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createMenuItem, type MenuItem } from "@/lib/admin-api";
+import { createMenuItem } from "@/lib/admin-api";
 
 interface AddFoodModalProps {
   isOpen: boolean;

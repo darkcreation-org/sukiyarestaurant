@@ -85,12 +85,13 @@ export async function POST(request: NextRequest) {
             : new Date(user.updatedAt).toISOString(),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error during login:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to authenticate',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );

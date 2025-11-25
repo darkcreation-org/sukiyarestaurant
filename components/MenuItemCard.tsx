@@ -11,9 +11,10 @@ interface ItemDetails {
 }
 
 const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
-    if(!isOpen) return false;
     const [dishQuantity, setDishQuantity] = useState(1);
     const [amount, setAmount] = useState(item.price);
+    
+    if(!isOpen) return null;
     //increase quntity
     const IncreaseQuantity = ()=> {
         setDishQuantity( prev => prev + 1 );

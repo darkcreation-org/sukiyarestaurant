@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb';
 import { getMongoDb } from '@/lib/db';
 
 // GET /api/users - Get all users
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const db = await getMongoDb();
 
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(usersWithStats);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching users:', error);
     return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
@@ -140,12 +140,13 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(user, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating user:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to create user',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );

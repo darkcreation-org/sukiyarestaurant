@@ -57,12 +57,13 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({ message: 'Password set successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error setting password:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to set password',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 }
     );

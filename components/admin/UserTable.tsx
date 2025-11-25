@@ -43,7 +43,7 @@ export default function UserTable() {
 
   const handleToggleStatus = async (user: User) => {
     try {
-      const userId = user._id || (user as any).id;
+      const userId = user._id;
       if (!userId) {
         console.error("Invalid user: missing ID");
         return;
@@ -57,7 +57,7 @@ export default function UserTable() {
 
   const handleRoleChange = async (user: User, newRole: UserRole) => {
     try {
-      const userId = user._id || (user as any).id;
+      const userId = user._id;
       if (!userId) {
         console.error("Invalid user: missing ID");
         return;
@@ -89,7 +89,7 @@ export default function UserTable() {
       return;
     }
     try {
-      const userId = user._id || (user as any).id;
+      const userId = user._id;
       if (!userId) {
         console.error("Invalid user: missing ID");
         alert("Error: Invalid user ID");
@@ -248,7 +248,7 @@ export default function UserTable() {
               <tbody className="bg-white divide-y divide-gray-100">
                 {filteredUsers.map((user, index) => (
                   <tr
-                    key={(user._id || (user as any).id) || `user-${index}`}
+                    key={user._id || `user-${index}`}
                     className="hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100/50 transition-all duration-200 group"
                   >
                     <td className="px-6 py-4">

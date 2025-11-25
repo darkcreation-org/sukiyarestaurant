@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     
     try {
-      const userId = user._id || user.id;
+      const userId = user._id || user.id; // AuthUser has both _id and id
       if (!userId) return;
       
       const updatedUser = await getUserById(userId);
