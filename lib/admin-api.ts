@@ -10,10 +10,97 @@ function getApiBaseUrl(): string {
   }
   
   // Default to production URL
-  return 'https://sukiyaapifinal.vercel.app';
+  return 'https://sukiyaapi.vercel.app';
 }
 
 const API_BASE_URL = getApiBaseUrl();
+
+// Request timeout for serverless functions (30 seconds - Vercel Pro plan limit)
+const REQUEST_TIMEOUT = 30000;
+
+// Maximum number of retries for transient failures
+const MAX_RETRIES = 2;
+
+// Retry delay in milliseconds
+const RETRY_DELAY = 1000;
+
+/**
+ * Fetch with timeout and retry logic
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeout: number = REQUEST_TIMEOUT,
+  retries: number = MAX_RETRIES
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    
+    // Handle timeout/abort errors
+    if (error instanceof Error && error.name === 'AbortError') {
+      if (retries > 0) {
+        // Retry on timeout
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return fetchWithTimeout(url, options, timeout, retries - 1);
+      }
+      throw new Error(`Request timeout: The server took too long to respond. This may be due to a cold start. Please try again.`);
+    }
+    
+    // Handle network errors
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      if (retries > 0) {
+        // Retry on network errors
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return fetchWithTimeout(url, options, timeout, retries - 1);
+      }
+      throw new Error(`Network error: Cannot connect to backend server at ${API_BASE_URL}. Please check your internet connection and try again.`);
+    }
+    
+    throw error;
+  }
+}
+
+/**
+ * Handle API response errors with better error messages
+ */
+async function handleApiError(response: Response, defaultMessage: string): Promise<never> {
+  let errorMessage = defaultMessage;
+  
+  // Handle specific status codes
+  if (response.status === 504 || response.status === 502) {
+    errorMessage = 'Gateway timeout: The server took too long to respond. This may be due to a cold start. Please try again in a few seconds.';
+  } else if (response.status === 503) {
+    errorMessage = 'Service unavailable: The backend service is temporarily unavailable. Please try again later.';
+  } else if (response.status === 500) {
+    errorMessage = 'Internal server error: The server encountered an error. Please try again or contact support.';
+  } else {
+    // Try to parse error response
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorData.message || defaultMessage;
+      
+      // Add details if available
+      if (errorData.details && process.env.NODE_ENV === 'development') {
+        errorMessage += ` (Details: ${errorData.details})`;
+      }
+    } catch {
+      // If JSON parsing fails, use status text
+      errorMessage = `Server error: ${response.status} ${response.statusText}`;
+    }
+  }
+  
+  throw new Error(errorMessage);
+}
 
 export type OrderStatus = "Received" | "Preparing" | "Ready" | "Completed";
 
@@ -92,7 +179,7 @@ export async function login(userId: string, password: string): Promise<LoginResp
 
     const requestBody = { userId: userId.trim(), password: password.trim() };
     
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -101,21 +188,11 @@ export async function login(userId: string, password: string): Promise<LoginResp
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to login';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to login');
     }
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -125,7 +202,7 @@ export async function login(userId: string, password: string): Promise<LoginResp
 
 export async function verifyToken(token: string): Promise<{ valid: boolean; user: AuthUser }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/auth/verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -134,21 +211,11 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to verify token';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to verify token');
     }
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -158,7 +225,7 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
 
 export async function setPassword(userId: string, password: string): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/set-password`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/auth/set-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -167,19 +234,9 @@ export async function setPassword(userId: string, password: string): Promise<voi
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to set password';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to set password');
     }
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -220,27 +277,17 @@ export function getAuthHeaders(): HeadersInit {
 // Order API functions - Fetch from MongoDb
 export async function getOrders(): Promise<Order[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/orders`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/orders`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to fetch orders';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to fetch orders');
     }
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -253,28 +300,18 @@ export async function updateOrderStatus(
   status: Order["status"]
 ): Promise<Order> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/status`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify({ status }),
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to update order status';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to update order status');
     }
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -285,27 +322,17 @@ export async function updateOrderStatus(
 // Menu API functions - Fetch from MongoDB via backend only
 export async function getMenuItems(): Promise<MenuItem[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/menu`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/menu`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to fetch menu items';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to fetch menu items');
     }
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -315,55 +342,28 @@ export async function getMenuItems(): Promise<MenuItem[]> {
 
 export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | "updatedAt">): Promise<MenuItem> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/menu`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/menu`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(item),
     });
     
     if (!response.ok) {
-      // Log response details first
+      // Log response details for debugging
       console.error('Backend error - Status:', response.status, response.statusText);
-      console.error('Backend error - Headers:', Object.fromEntries(response.headers.entries()));
       
       let errorMessage = 'Failed to create menu item';
-      let errorData: Record<string, unknown> | null = null;
-      
       try {
-        // Clone the response to read it without consuming it
-        const responseClone = response.clone();
-        const text = await responseClone.text();
-        console.error('Backend error - Raw response text:', text);
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
         
-        // Try to parse as JSON
-        if (text && text.trim().length > 0) {
-          try {
-            errorData = JSON.parse(text);
-            console.error('Backend error - Parsed JSON:', errorData);
-          } catch {
-            console.error('Backend error - Not valid JSON, using text as error message');
-            errorMessage = text || `Server error: ${response.status} ${response.statusText}`;
-          }
-        } else {
-          console.error('Backend error - Empty response body');
-          errorMessage = `Server error: ${response.status} ${response.statusText} (Empty response)`;
+        // If there are missing fields, include them in the error
+        if (errorData.missingFields && Array.isArray(errorData.missingFields)) {
+          errorMessage = `${errorMessage} (Missing: ${errorData.missingFields.join(', ')})`;
         }
-        
-        // Extract error message from parsed data
-        if (errorData) {
-          const error = typeof errorData.error === 'string' ? errorData.error : undefined;
-          const message = typeof errorData.message === 'string' ? errorData.message : undefined;
-          const details = typeof errorData.details === 'string' ? errorData.details : undefined;
-          errorMessage = error || message || details || errorMessage;
-          
-          // If there are missing fields, include them in the error
-          if (errorData.missingFields && Array.isArray(errorData.missingFields)) {
-            errorMessage = `${errorMessage} (Missing: ${errorData.missingFields.join(', ')})`;
-          }
-        }
-      } catch (parseError) {
-        console.error('Backend error - Failed to read response:', parseError);
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+      } catch {
+        // If JSON parsing fails, use handleApiError
+        await handleApiError(response, errorMessage);
       }
       
       throw new Error(errorMessage);
@@ -371,9 +371,6 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -383,29 +380,18 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
 
 export async function updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<MenuItem> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/menu/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/menu/${id}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify(updates),
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to update menu item';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-        errorMessage = `${errorMessage} (Status: ${response.status})`;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to update menu item');
     }
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -415,21 +401,13 @@ export async function updateMenuItem(id: string, updates: Partial<MenuItem>): Pr
 
 export async function deleteMenuItem(id: string): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/menu/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/menu/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to delete menu item';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-        errorMessage = `${errorMessage} (Status: ${response.status})`;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to delete menu item');
     }
     
     // Read the response body to ensure the request is fully processed
@@ -439,9 +417,6 @@ export async function deleteMenuItem(id: string): Promise<void> {
       // Response might be empty, which is fine
     }
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -452,27 +427,17 @@ export async function deleteMenuItem(id: string): Promise<void> {
 // User Management API Functions
 export async function getUsers(): Promise<User[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/users`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to fetch users';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to fetch users');
     }
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -483,7 +448,7 @@ export async function getUsers(): Promise<User[]> {
 export async function getUserById(id: string): Promise<User> {
   try {
     // Try to fetch directly by ID first
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/users/${id}`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
@@ -502,19 +467,9 @@ export async function getUserById(id: string): Promise<User> {
       throw new Error('User not found');
     }
     
-    // For other errors, throw with the error message
-    let errorMessage = 'Failed to fetch user';
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.error || errorMessage;
-    } catch {
-      errorMessage = `Server error: ${response.status} ${response.statusText}`;
-    }
-    throw new Error(errorMessage);
+    // For other errors, use handleApiError
+    await handleApiError(response, 'Failed to fetch user');
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -524,27 +479,17 @@ export async function getUserById(id: string): Promise<User> {
 
 export async function getUserByUserId(userId: string): Promise<User> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users/userId/${userId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/users/userId/${userId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to fetch user';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to fetch user');
     }
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -554,7 +499,7 @@ export async function getUserByUserId(userId: string): Promise<User> {
 
 export async function createUser(user: Omit<User, "_id" | "createdAt" | "updatedAt" | "totalOrders" | "totalSpent" | "lastOrderDate">): Promise<User> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/users`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(user),
@@ -564,22 +509,18 @@ export async function createUser(user: Omit<User, "_id" | "createdAt" | "updated
       let errorMessage = 'Failed to create user';
       try {
         const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
+        errorMessage = errorData.error || errorData.message || errorMessage;
         if (errorData.missingFields) {
           errorMessage += `: ${errorData.missingFields.join(', ')}`;
         }
-        errorMessage = `${errorMessage} (Status: ${response.status})`;
       } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        await handleApiError(response, errorMessage);
       }
       throw new Error(errorMessage);
     }
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -589,29 +530,18 @@ export async function createUser(user: Omit<User, "_id" | "createdAt" | "updated
 
 export async function updateUser(id: string, updates: Partial<User>): Promise<User> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/users/${id}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify(updates),
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to update user';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-        errorMessage = `${errorMessage} (Status: ${response.status})`;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to update user');
     }
     
     return response.json();
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
@@ -621,21 +551,13 @@ export async function updateUser(id: string, updates: Partial<User>): Promise<Us
 
 export async function deleteUser(id: string): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/users/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
-      let errorMessage = 'Failed to delete user';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorMessage;
-        errorMessage = `${errorMessage} (Status: ${response.status})`;
-      } catch {
-        errorMessage = `Server error: ${response.status} ${response.statusText}`;
-      }
-      throw new Error(errorMessage);
+      await handleApiError(response, 'Failed to delete user');
     }
     
     // Read the response body to ensure the request is fully processed
@@ -645,9 +567,6 @@ export async function deleteUser(id: string): Promise<void> {
       // Response might be empty, which is fine
     }
   } catch (error) {
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please check if the API is deployed and accessible.`);
-    }
     if (error instanceof Error) {
       throw error;
     }
