@@ -47,6 +47,7 @@ export async function verifyUserFromToken(token: string) {
       phone: user.phone,
       role: user.role.toLowerCase(),
       isActive: user.isActive,
+      lineUserId: user.lineUserId || undefined,
       createdAt: user.createdAt instanceof Date ? user.createdAt.toISOString() : new Date(user.createdAt).toISOString(),
       updatedAt: user.updatedAt instanceof Date ? user.updatedAt.toISOString() : new Date(user.updatedAt).toISOString(),
     };

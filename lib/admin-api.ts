@@ -149,6 +149,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
+  lineUserId?: string;
 }
 
 export interface AuthUser {
@@ -163,6 +164,7 @@ export interface AuthUser {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  lineUserId?: string;
 }
 
 export interface LoginResponse {

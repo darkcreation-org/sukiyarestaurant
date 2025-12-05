@@ -72,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isActive: updatedUser.isActive,
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt,
+        lineUserId: updatedUser.lineUserId,
       };
       setUser(authUser);
     } catch (error) {
