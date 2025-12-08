@@ -38,7 +38,7 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
                 <div className="flex flex-col relative gap-2">
                     <div className="relative w-full h-[175px] md:h-[280px]">
                         <Image 
-                        src="/kottu.jpg" 
+                        src={item.image || "/kottu.jpg"} 
                         alt={item.title} 
                         fill style={{objectFit:"cover"}}
                         />
@@ -83,18 +83,14 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
     )
 };
 
-const MenuItemCard = () => {
+interface MenuItemCardProps {
+    item: IMenuItem;
+}
+
+const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
     const [isModelOpen, setIsModelOpen] = useState(false);
     const isOpen = ()=> setIsModelOpen(true);
     const isClose = ()=> setIsModelOpen(false);
-    const item = {
-         id:"12",
-         title:"Kaiseki Ryori",
-         price:125,
-         image:"/kottu.jpg",
-         description: "Lorem ipsumneque eum id maxime reiciendis tempora! Iste, eveniet architecto quis, doloribus maiores blanditiis eos facere consequatur perferendis, veritatis consequuntur possimus aspernatur assumenda veniam voluptatum quos! Animi, nobis! At quae quo recusandae, quaerat dolorum iusto vel facilis.Perspiciatis consequatur repudiandae exercitationem assumenda neque! Minima, fugiat laborum sapiente rerum, rem eum minus voluptate ea amet, beatae facilis esse voluptatem maiores dolorum velit magni eligendi vel quaerat consectetur quo?",
-         isAvailable:true, 
-    }
     return(
         <>
         <div 
@@ -103,14 +99,14 @@ const MenuItemCard = () => {
         >
             <div className="relative w-full h-[105px] md:h-[175px]">
                 <Image 
-                src="/kottu.jpg" 
-                alt="" 
+                src={item.image || "/kottu.jpg"} 
+                alt={item.title} 
                 fill style={{objectFit:"cover"}}
                 />
             </div>
             <div className="item-intro px-2 text-white">
-                <h3 className="font-bold">Kaiseki Ryori</h3>
-                <div>Price: <span>125</span>&yen;</div>
+                <h3 className="font-bold">{item.title}</h3>
+                <div>Price: <span>{item.price}</span>&yen;</div>
             </div>
             <div className="flex absolute inset-x-2 bottom-2 h-10 justify-center">
                 <Button className="text-white">Order Dish</Button>
