@@ -129,6 +129,7 @@ export interface MenuItem {
   price: number;
   imageUrl: string;
   category: string;
+  subcategory?: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
