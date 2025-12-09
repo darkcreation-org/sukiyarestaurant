@@ -2,6 +2,8 @@
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
 import { IMenuItem } from "@/types/menu-types"
 
 interface ItemDetails {
@@ -13,6 +15,8 @@ interface ItemDetails {
 const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
     const [dishQuantity, setDishQuantity] = useState(1);
     const [amount, setAmount] = useState(item.price);
+    const { dispatch } = useCart();
+    const router = useRouter();
     
     if(!isOpen) return null;
     //increase quntity
@@ -24,6 +28,25 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
     const DecreaseQuantity = ()=> {
         setDishQuantity( prev => prev > 1? prev - 1 : 1 );
         setAmount( prev => dishQuantity > 1? prev - item.price : item.price );
+    };
+
+    // Handle Add Order - Add to cart and navigate to checkout
+    const handleAddOrder = () => {
+        // Add item to cart
+        dispatch({
+            type: "ADD_ITEM",
+            payload: {
+                ...item,
+                quantity: dishQuantity,
+                totalAmount: amount,
+            }
+        });
+        
+        // Close modal
+        isClose();
+        
+        // Navigate to checkout page
+        router.push("/checkout");
     };
 
     return(
@@ -66,7 +89,12 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
                             </div>
                         </div>
                         <div className="flex flex-col" onClick={(e) => e.stopPropagation()}>
-                            <Button className=" text-white">Add Order</Button>
+                            <Button 
+                                className=" text-white"
+                                onClick={handleAddOrder}
+                            >
+                                Add Order
+                            </Button>
                         </div>
                         
                     </div>
