@@ -26,6 +26,7 @@ export default function EditFoodModal({
     category: "",
     subcategory: "",
     isActive: true,
+    isAddon: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +53,7 @@ export default function EditFoodModal({
         category: item.category,
         subcategory: item.subcategory || "",
         isActive: item.isActive,
+        isAddon: item.isAddon || false,
       });
       setError(null);
     }
@@ -101,6 +103,7 @@ export default function EditFoodModal({
         category: formData.category,
         subcategory: formData.subcategory.trim() || null,
         isActive: formData.isActive,
+        isAddon: formData.isAddon,
       });
 
       onSuccess();
@@ -326,7 +329,7 @@ export default function EditFoodModal({
             )}
 
             {/* Status Toggle */}
-            <div>
+            <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -338,6 +341,19 @@ export default function EditFoodModal({
                 />
                 <span className="text-base font-bold text-gray-900">
                   Active (visible in menu)
+                </span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isAddon}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isAddon: e.target.checked })
+                  }
+                  className="w-6 h-6 rounded border-2 border-gray-300 text-[#06C755] focus:ring-2 focus:ring-[#06C755]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
+                />
+                <span className="text-base font-bold text-gray-900">
+                  Available as Addon
                 </span>
               </label>
             </div>

@@ -24,6 +24,7 @@ export default function AddFoodModal({
     category: "",
     subcategory: "",
     isActive: true,
+    isAddon: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +75,7 @@ export default function AddFoodModal({
         category: formData.category,
         subcategory: formData.subcategory.trim() || null,
         isActive: formData.isActive,
+        isAddon: formData.isAddon,
       });
 
       // Reset form
@@ -85,6 +87,7 @@ export default function AddFoodModal({
         category: "",
         subcategory: "",
         isActive: true,
+        isAddon: false,
       });
 
       onSuccess();
@@ -319,7 +322,7 @@ export default function AddFoodModal({
             )}
 
             {/* Status Toggle */}
-            <div>
+            <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -331,6 +334,19 @@ export default function AddFoodModal({
                 />
                 <span className="text-base font-bold text-gray-900">
                   Active (visible in menu)
+                </span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isAddon}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isAddon: e.target.checked })
+                  }
+                  className="w-6 h-6 rounded border-2 border-gray-300 text-[#31a354] focus:ring-2 focus:ring-[#31a354]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
+                />
+                <span className="text-base font-bold text-gray-900">
+                  Available as Addon
                 </span>
               </label>
             </div>
