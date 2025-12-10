@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/lib/auth-context";
 import Image from "next/image";
+import AddonSelector from "@/components/AddonSelector";
 
 type PaymentMethod = "paypay" | "manual";
 
@@ -17,6 +18,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paypay");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedItemForAddons, setSelectedItemForAddons] = useState<string | null>(null);
 
   // Get table number from URL params if available
   useEffect(() => {
@@ -51,10 +53,14 @@ export default function CheckoutPage() {
     setError(null);
 
     try {
-      // Prepare order items
+      // Prepare order items with addons
       const orderItems = items.map((item) => ({
         itemId: item.id,
         quantity: item.quantity,
+        addons: item.addons?.map(addon => ({
+          itemId: addon.id,
+          quantity: addon.quantity,
+        })) || [],
       }));
 
       // Get API base URL
@@ -181,26 +187,56 @@ export default function CheckoutPage() {
             <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6">
               <h2 className="text-xl font-bold mb-4">Order Items</h2>
               <div className="space-y-4">
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                    <div className="relative w-20 h-20 rounded-lg overflow-hidden">
-                      <Image
-                        src={item.image || "/kottu.jpg"}
-                        alt={item.title}
-                        fill
-                        className="object-cover"
-                      />
+                {items.map((item) => {
+                  const itemTotal = item.totalAmount + (item.addons?.reduce((sum, addon) => sum + addon.totalAmount, 0) || 0);
+                  return (
+                    <div key={item.id} className="p-4 bg-gray-50 rounded-xl space-y-3">
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-20 h-20 rounded-lg overflow-hidden">
+                          <Image
+                            src={item.image || "/kottu.jpg"}
+                            alt={item.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold">{item.title}</h3>
+                          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">¥{itemTotal.toLocaleString()}</p>
+                          <p className="text-sm text-gray-600">¥{item.price.toLocaleString()} each</p>
+                        </div>
+                      </div>
+                      
+                      {/* Addons Display */}
+                      {item.addons && item.addons.length > 0 && (
+                        <div className="ml-24 pl-4 border-l-2 border-primary space-y-2">
+                          <p className="text-sm font-semibold text-gray-700">Addons:</p>
+                          {item.addons.map((addon) => (
+                            <div key={addon.id} className="flex justify-between text-sm">
+                              <span className="text-gray-600">
+                                + {addon.title} (×{addon.quantity})
+                              </span>
+                              <span className="font-medium">¥{addon.totalAmount.toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Add Addons Button */}
+                      <div className="ml-24">
+                        <button
+                          onClick={() => setSelectedItemForAddons(item.id)}
+                          className="text-sm text-primary hover:underline font-medium"
+                        >
+                          {item.addons && item.addons.length > 0 ? "Edit Addons" : "Add Addons"}
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold">{item.title}</h3>
-                      <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">¥{item.totalAmount.toLocaleString()}</p>
-                      <p className="text-sm text-gray-600">¥{item.price.toLocaleString()} each</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -258,6 +294,14 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+      
+      {/* Addon Selector Modal */}
+      {selectedItemForAddons && (
+        <AddonSelector
+          parentItemId={selectedItemForAddons}
+          onClose={() => setSelectedItemForAddons(null)}
+        />
+      )}
     </main>
   );
 }
