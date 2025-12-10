@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderId = searchParams.get("orderId");
@@ -55,7 +55,7 @@ export default function CheckoutSuccessPage() {
             )}
 
             <p className="text-gray-600 mb-8">
-              We'll notify you when your order is ready. Thank you for your order!
+              We&apos;ll notify you when your order is ready. Thank you for your order!
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -78,6 +78,24 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen bg-background transition-colors duration-300">
+        <div className="inner-wrapper flex-col mt-[100px] py-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-8 md:p-12">
+              <p>Loading...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    }>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }
 
