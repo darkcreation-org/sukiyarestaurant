@@ -110,7 +110,9 @@ export default function AddFoodModal({
         price: "",
         imageUrl: "",
         category: "Main Course",
+        subcategory: "",
         isActive: true,
+        isAddon: false,
       });
       setError(null);
       onClose();
