@@ -129,7 +129,9 @@ export interface MenuItem {
   price: number;
   imageUrl: string;
   category: string;
+  subcategory?: string | null;
   isActive: boolean;
+  isAddon?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -149,6 +151,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
+  lineUserId?: string;
 }
 
 export interface AuthUser {
@@ -163,6 +166,7 @@ export interface AuthUser {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  lineUserId?: string;
 }
 
 export interface LoginResponse {

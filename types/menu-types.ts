@@ -5,4 +5,7 @@ export interface IMenuItem {
     description:string;
     image:string;
     isAvailable:boolean;
+    category:string;
+    subcategory?:string | null;
+    isAddon?:boolean;
 }

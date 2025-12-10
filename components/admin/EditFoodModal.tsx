@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { updateMenuItem, type MenuItem } from "@/lib/admin-api";
 
 interface EditFoodModalProps {
@@ -8,6 +8,7 @@ interface EditFoodModalProps {
   item: MenuItem | null;
   onClose: () => void;
   onSuccess: () => void;
+  menuItems?: MenuItem[];
 }
 
 export default function EditFoodModal({
@@ -15,25 +16,32 @@ export default function EditFoodModal({
   item,
   onClose,
   onSuccess,
+  menuItems = [],
 }: EditFoodModalProps) {
   const [formData, setFormData] = useState({
     nameEn: "",
     nameJp: "",
     price: "",
     imageUrl: "",
-    category: "Main Course",
+    category: "",
+    subcategory: "",
     isActive: true,
+    isAddon: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const categories = [
-    "Main Course",
-    "Appetizer",
-    "Dessert",
-    "Drink",
-    "Side Dish",
-  ];
+  // Get unique categories from existing menu items
+  const existingCategories = useMemo(() => {
+    const categories = Array.from(
+      new Set(menuItems.map((item) => item.category).filter(Boolean))
+    ).sort();
+    // Add default categories if no menu items exist
+    if (categories.length === 0) {
+      return ["Main Course", "Appetizer", "Dessert", "Drink", "Side Dish"];
+    }
+    return categories;
+  }, [menuItems]);
 
   useEffect(() => {
     if (item) {
@@ -43,7 +51,9 @@ export default function EditFoodModal({
         price: item.price.toString(),
         imageUrl: item.imageUrl,
         category: item.category,
+        subcategory: item.subcategory || "",
         isActive: item.isActive,
+        isAddon: item.isAddon || false,
       });
       setError(null);
     }
@@ -91,7 +101,9 @@ export default function EditFoodModal({
         price: parseFloat(formData.price),
         imageUrl: formData.imageUrl.trim(),
         category: formData.category,
+        subcategory: formData.subcategory.trim() || null,
         isActive: formData.isActive,
+        isAddon: formData.isAddon,
       });
 
       onSuccess();
@@ -223,22 +235,60 @@ export default function EditFoodModal({
               <div>
                 <label className="block text-sm font-bold text-gray-600 uppercase tracking-wide mb-2">
                   Category <span className="text-red-500">*</span>
+                  <span className="text-gray-400 text-xs font-normal ml-2">(Select existing or type new)</span>
                 </label>
-                <select
+                <input
+                  type="text"
+                  list="category-list-edit"
                   value={formData.category}
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
                   }
                   required
                   className="w-full rounded-xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm px-4 py-3 md:py-3.5 text-base font-medium text-gray-900 shadow-sm focus:border-[#06C755] focus:ring-2 focus:ring-[#06C755]/20 focus:outline-none transition-all duration-200 min-h-[48px] touch-manipulation hover:border-gray-300"
-                >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
+                  placeholder="Type or select a category"
+                  autoComplete="off"
+                />
+                <datalist id="category-list-edit">
+                  {existingCategories.map((category) => (
+                    <option key={category} value={category} />
                   ))}
-                </select>
+                </datalist>
+                {existingCategories.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="text-xs text-gray-500 font-medium">Existing categories:</span>
+                    {existingCategories.slice(0, 5).map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, category })}
+                        className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
+                      >
+                        {category}
+                      </button>
+                    ))}
+                    {existingCategories.length > 5 && (
+                      <span className="text-xs text-gray-400">+{existingCategories.length - 5} more</span>
+                    )}
+                  </div>
+                )}
               </div>
+            </div>
+
+            {/* Subcategory */}
+            <div>
+              <label className="block text-sm font-bold text-gray-600 uppercase tracking-wide mb-2">
+                Subcategory <span className="text-gray-400 text-xs">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={formData.subcategory}
+                onChange={(e) =>
+                  setFormData({ ...formData, subcategory: e.target.value })
+                }
+                className="w-full rounded-xl border-2 border-gray-200 bg-white/80 backdrop-blur-sm px-4 py-3 md:py-3.5 text-base font-medium text-gray-900 shadow-sm focus:border-[#06C755] focus:ring-2 focus:ring-[#06C755]/20 focus:outline-none transition-all duration-200 min-h-[48px] touch-manipulation hover:border-gray-300"
+                placeholder="e.g., Sushi, Ramen"
+              />
             </div>
 
             {/* Image URL */}
@@ -279,7 +329,7 @@ export default function EditFoodModal({
             )}
 
             {/* Status Toggle */}
-            <div>
+            <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -291,6 +341,19 @@ export default function EditFoodModal({
                 />
                 <span className="text-base font-bold text-gray-900">
                   Active (visible in menu)
+                </span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isAddon}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isAddon: e.target.checked })
+                  }
+                  className="w-6 h-6 rounded border-2 border-gray-300 text-[#06C755] focus:ring-2 focus:ring-[#06C755]/20 focus:ring-offset-0 cursor-pointer touch-manipulation"
+                />
+                <span className="text-base font-bold text-gray-900">
+                  Available as Addon
                 </span>
               </label>
             </div>

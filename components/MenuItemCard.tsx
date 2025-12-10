@@ -2,6 +2,8 @@
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
 import { IMenuItem } from "@/types/menu-types"
 
 interface ItemDetails {
@@ -13,6 +15,8 @@ interface ItemDetails {
 const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
     const [dishQuantity, setDishQuantity] = useState(1);
     const [amount, setAmount] = useState(item.price);
+    const { dispatch } = useCart();
+    const router = useRouter();
     
     if(!isOpen) return null;
     //increase quntity
@@ -24,6 +28,25 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
     const DecreaseQuantity = ()=> {
         setDishQuantity( prev => prev > 1? prev - 1 : 1 );
         setAmount( prev => dishQuantity > 1? prev - item.price : item.price );
+    };
+
+    // Handle Add Order - Add to cart and navigate to checkout
+    const handleAddOrder = () => {
+        // Add item to cart
+        dispatch({
+            type: "ADD_ITEM",
+            payload: {
+                ...item,
+                quantity: dishQuantity,
+                totalAmount: amount,
+            }
+        });
+        
+        // Close modal
+        isClose();
+        
+        // Navigate to checkout page
+        router.push("/checkout");
     };
 
     return(
@@ -38,7 +61,7 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
                 <div className="flex flex-col relative gap-2">
                     <div className="relative w-full h-[175px] md:h-[280px]">
                         <Image 
-                        src="/kottu.jpg" 
+                        src={item.image || "/kottu.jpg"} 
                         alt={item.title} 
                         fill style={{objectFit:"cover"}}
                         />
@@ -66,7 +89,12 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
                             </div>
                         </div>
                         <div className="flex flex-col" onClick={(e) => e.stopPropagation()}>
-                            <Button className=" text-white">Add Order</Button>
+                            <Button 
+                                className=" text-white"
+                                onClick={handleAddOrder}
+                            >
+                                Add Order
+                            </Button>
                         </div>
                         
                     </div>
@@ -83,18 +111,14 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
     )
 };
 
-const MenuItemCard = () => {
+interface MenuItemCardProps {
+    item: IMenuItem;
+}
+
+const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
     const [isModelOpen, setIsModelOpen] = useState(false);
     const isOpen = ()=> setIsModelOpen(true);
     const isClose = ()=> setIsModelOpen(false);
-    const item = {
-         id:"12",
-         title:"Kaiseki Ryori",
-         price:125,
-         image:"/kottu.jpg",
-         description: "Lorem ipsumneque eum id maxime reiciendis tempora! Iste, eveniet architecto quis, doloribus maiores blanditiis eos facere consequatur perferendis, veritatis consequuntur possimus aspernatur assumenda veniam voluptatum quos! Animi, nobis! At quae quo recusandae, quaerat dolorum iusto vel facilis.Perspiciatis consequatur repudiandae exercitationem assumenda neque! Minima, fugiat laborum sapiente rerum, rem eum minus voluptate ea amet, beatae facilis esse voluptatem maiores dolorum velit magni eligendi vel quaerat consectetur quo?",
-         isAvailable:true, 
-    }
     return(
         <>
         <div 
@@ -103,14 +127,14 @@ const MenuItemCard = () => {
         >
             <div className="relative w-full h-[105px] md:h-[175px]">
                 <Image 
-                src="/kottu.jpg" 
-                alt="" 
+                src={item.image || "/kottu.jpg"} 
+                alt={item.title} 
                 fill style={{objectFit:"cover"}}
                 />
             </div>
             <div className="item-intro px-2 text-white">
-                <h3 className="font-bold">Kaiseki Ryori</h3>
-                <div>Price: <span>125</span>&yen;</div>
+                <h3 className="font-bold">{item.title}</h3>
+                <div>Price: <span>{item.price}</span>&yen;</div>
             </div>
             <div className="flex absolute inset-x-2 bottom-2 h-10 justify-center">
                 <Button className="text-white">Order Dish</Button>

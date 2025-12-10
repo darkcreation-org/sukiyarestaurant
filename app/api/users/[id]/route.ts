@@ -60,6 +60,7 @@ export async function GET(
           ? user.updatedAt.toISOString()
           : new Date(user.updatedAt).toISOString(),
       isActive: user.isActive,
+      lineUserId: user.lineUserId || undefined,
     };
 
     return NextResponse.json(userWithStats);
@@ -159,6 +160,7 @@ export async function PATCH(
           ? result.updatedAt.toISOString()
           : new Date(result.updatedAt).toISOString(),
       isActive: result.isActive,
+      lineUserId: result.lineUserId || undefined,
     };
 
     return NextResponse.json(user);

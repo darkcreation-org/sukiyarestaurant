@@ -213,6 +213,7 @@ export default function MenuTable() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleRefresh}
+        menuItems={allMenuItems}
       />
 
       {/* Edit Food Modal */}
@@ -221,6 +222,7 @@ export default function MenuTable() {
         item={editingItem}
         onClose={() => setEditingItem(null)}
         onSuccess={handleRefresh}
+        menuItems={allMenuItems}
       />
     </div>
   );
