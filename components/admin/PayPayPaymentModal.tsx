@@ -65,6 +65,11 @@ export default function PayPayPaymentModal({
 
   if (!isOpen || !mounted) return null;
 
+  // Ensure document.body exists before creating portal
+  if (typeof document === 'undefined' || !document.body) {
+    return null;
+  }
+
   const modalContent = (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/70 backdrop-blur-md"
