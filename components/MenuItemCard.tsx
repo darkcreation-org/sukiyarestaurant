@@ -2,8 +2,6 @@
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCart } from "@/context/CartContext";
 import { IMenuItem } from "@/types/menu-types"
 
 interface ItemDetails {
@@ -15,9 +13,6 @@ interface ItemDetails {
 const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
     const [dishQuantity, setDishQuantity] = useState(1);
     const [amount, setAmount] = useState(item.price);
-    const { dispatch } = useCart();
-    const router = useRouter();
-    const searchParams = useSearchParams();
     
     if(!isOpen) return null;
     //increase quntity
@@ -29,55 +24,6 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
     const DecreaseQuantity = ()=> {
         setDishQuantity( prev => prev > 1? prev - 1 : 1 );
         setAmount( prev => dishQuantity > 1? prev - item.price : item.price );
-    };
-
-    // Handle Add to Cart - Just add to cart without navigating
-    const handleAddToCart = () => {
-        // Add item to cart
-        dispatch({
-            type: "ADD_ITEM",
-            payload: {
-                ...item,
-                quantity: dishQuantity,
-                totalAmount: amount,
-            }
-        });
-        
-        // Close modal
-        isClose();
-        
-        // Reset quantity for next time
-        setDishQuantity(1);
-        setAmount(item.price);
-    };
-
-    // Handle Add Order - Add to cart and navigate to checkout
-    const handleAddOrder = () => {
-        const tableFromQr = searchParams.get("table");
-
-        // Add item to cart
-        dispatch({
-            type: "ADD_ITEM",
-            payload: {
-                ...item,
-                quantity: dishQuantity,
-                totalAmount: amount,
-            }
-        });
-        
-        // Close modal
-        isClose();
-        
-        // Navigate to checkout page
-        if (tableFromQr) {
-            router.push(`/checkout?table=${encodeURIComponent(tableFromQr)}`);
-        } else {
-            router.push("/checkout");
-        }
-        
-        // Reset quantity for next time
-        setDishQuantity(1);
-        setAmount(item.price);
     };
 
     return(
@@ -119,20 +65,8 @@ const  MenuItemDetail: React.FC<ItemDetails> = ({isOpen, isClose, item}) => {
                                 <span className="flex mt-1 text-white font-semibold">Amount: <span className=" ml-1 text-white  font-bold">{amount} &yen;</span></span>
                             </div>
                         </div>
-                        <div className="flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
-                            <Button 
-                                className="text-white bg-primary hover:bg-primary/90"
-                                onClick={handleAddToCart}
-                            >
-                                Add to Cart
-                            </Button>
-                            <Button 
-                                variant="outline"
-                                className="text-primary border-primary hover:bg-primary/10"
-                                onClick={handleAddOrder}
-                            >
-                                Add & Checkout
-                            </Button>
+                        <div className="flex flex-col" onClick={(e) => e.stopPropagation()}>
+                            <Button className=" text-white">Add Order</Button>
                         </div>
                         
                     </div>
