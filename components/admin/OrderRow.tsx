@@ -4,6 +4,7 @@ import { useState } from "react";
 import { type Order, updateOrderPaymentStatus } from "@/lib/admin-api";
 import StatusBadge from "./StatusBadge";
 import StatusSelect from "./StatusSelect";
+import PayPayPaymentModal from "./PayPayPaymentModal";
 
 interface OrderRowProps {
   order: Order;
@@ -24,6 +25,7 @@ export default function OrderRow({
   onPaymentStatusChange,
 }: OrderRowProps) {
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   // Format date and time
   const orderDate = new Date(order.createdAt).toLocaleDateString("en-US", {
@@ -65,12 +67,17 @@ export default function OrderRow({
   const handlePaymentSelect = async (value: string) => {
     if (isUpdatingPayment) return;
 
+    if (value === "paypay_complete") {
+      setIsPaymentModalOpen(true);
+      return;
+    }
+
     try {
       setIsUpdatingPayment(true);
 
       let newStatus: Order["paymentStatus"] = "pending";
 
-      if (value === "paypay_complete" || value === "manual_complete") newStatus = "paid";
+      if (value === "manual_complete") newStatus = "paid";
 
       const updated = await updateOrderPaymentStatus(order._id, newStatus);
       onPaymentStatusChange(order._id, updated.paymentStatus ?? newStatus);
@@ -189,6 +196,17 @@ export default function OrderRow({
           </div>
         </td>
       </tr>
+      {order.paymentMethod === "paypay" && (
+        <PayPayPaymentModal
+          order={order}
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onPaymentComplete={(orderId, paymentStatus) => {
+            onPaymentStatusChange(orderId, paymentStatus);
+            setIsPaymentModalOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }
