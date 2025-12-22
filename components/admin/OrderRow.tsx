@@ -26,6 +26,7 @@ export default function OrderRow({
 }: OrderRowProps) {
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentSelectValue, setPaymentSelectValue] = useState("");
 
   // Format date and time
   const orderDate = new Date(order.createdAt).toLocaleDateString("en-US", {
@@ -67,6 +68,8 @@ export default function OrderRow({
   const handlePaymentSelect = async (value: string) => {
     if (isUpdatingPayment) return;
 
+    setPaymentSelectValue(value);
+
     if (value === "paypay_complete") {
       setIsPaymentModalOpen(true);
       return;
@@ -81,6 +84,7 @@ export default function OrderRow({
 
       const updated = await updateOrderPaymentStatus(order._id, newStatus);
       onPaymentStatusChange(order._id, updated.paymentStatus ?? newStatus);
+      setPaymentSelectValue("");
     } catch (error) {
       console.error("Failed to update payment status:", error);
     } finally {
@@ -173,10 +177,10 @@ export default function OrderRow({
                   </div>*/
                     <div className="ml-auto flex flex-col gap-2">
                       <select
-                          defaultValue=""
-                          onChange={(e) => handlePaymentSelect(e.target.value)}
-                          disabled={isUpdatingPayment}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-50"
+                        value={paymentSelectValue}
+                        onChange={(e) => handlePaymentSelect(e.target.value)}
+                        disabled={isUpdatingPayment}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-50"
                       >
                         <option value="" disabled>
                           Select payment status
@@ -196,17 +200,19 @@ export default function OrderRow({
           </div>
         </td>
       </tr>
-      {order.paymentMethod === "paypay" && (
-        <PayPayPaymentModal
-          order={order}
-          isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
-          onPaymentComplete={(orderId, paymentStatus) => {
-            onPaymentStatusChange(orderId, paymentStatus);
-            setIsPaymentModalOpen(false);
-          }}
-        />
-      )}
+      <PayPayPaymentModal
+        order={order}
+        isOpen={isPaymentModalOpen}
+        onClose={() => {
+          setIsPaymentModalOpen(false);
+          setPaymentSelectValue("");
+        }}
+        onPaymentComplete={(orderId, paymentStatus) => {
+          onPaymentStatusChange(orderId, paymentStatus);
+          setIsPaymentModalOpen(false);
+          setPaymentSelectValue("");
+        }}
+      />
     </>
   );
 }
