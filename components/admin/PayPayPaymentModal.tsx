@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { type Order, updateOrderPaymentStatus } from "@/lib/admin-api";
 
@@ -16,13 +16,67 @@ export default function PayPayPaymentModal({
   onPaymentComplete,
 }: PayPayPaymentModalProps) {
   const [isSaving, setIsSaving] = useState(false);
-  // Backend may return different field names depending on integration
-  const qrUrl =
-    (order as any)?.paypayQrUrl ||
-    (order as any)?.paypayQrCode ||
-    (order as any)?.qrCodeUrl ||
-    (order as any)?.paymentUrl ||
-    (order as any)?.qrUrl;
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+
+  const qrEndpoint = process.env.NEXT_PUBLIC_PAYPAY_QR_ENDPOINT;
+
+  const requestUrl = useMemo(() => {
+    if (!qrEndpoint) return null;
+    // Allow pattern substitution like https://api.example.com/paypay/qr/{orderId}
+    if (qrEndpoint.includes("{orderId}")) {
+      return qrEndpoint.replace("{orderId}", order.orderId);
+    }
+    // Otherwise append as query param
+    const joiner = qrEndpoint.includes("?") ? "&" : "?";
+    return `${qrEndpoint}${joiner}orderId=${order.orderId}`;
+  }, [qrEndpoint, order.orderId]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!requestUrl) {
+      setQrError("PayPay QR endpoint is not configured. Set NEXT_PUBLIC_PAYPAY_QR_ENDPOINT.");
+      return;
+    }
+
+    let cancelled = false;
+    async function fetchQr() {
+      try {
+        setQrLoading(true);
+        setQrError(null);
+        const res = await fetch(requestUrl);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || `QR request failed (${res.status})`);
+        }
+        const data = await res.json();
+        const url =
+          data?.paypayQrUrl ||
+          data?.paypayQrCode ||
+          data?.qrCodeUrl ||
+          data?.paymentUrl ||
+          data?.qrUrl ||
+          data?.url;
+        if (!url) {
+          throw new Error("QR URL missing in backend response.");
+        }
+        if (!cancelled) setQrUrl(url);
+      } catch (error) {
+        if (!cancelled) {
+          setQrError(error instanceof Error ? error.message : "Failed to load PayPay QR.");
+          setQrUrl(null);
+        }
+      } finally {
+        if (!cancelled) setQrLoading(false);
+      }
+    }
+    fetchQr();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, requestUrl]);
   if (!isOpen) return null;
   if (typeof document === "undefined") return null;
 
@@ -93,7 +147,16 @@ export default function PayPayPaymentModal({
 
           <div className="bg-white border border-dashed border-gray-300 rounded-xl p-4 text-center">
             <h3 className="font-bold text-gray-900 mb-3">PayPay QR</h3>
-            {qrUrl ? (
+            {qrLoading ? (
+              <div className="py-6 text-sm text-gray-600 flex items-center justify-center gap-3">
+                <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+                Loading PayPay QR...
+              </div>
+            ) : qrError ? (
+              <p className="text-sm text-red-600">
+                {qrError}
+              </p>
+            ) : qrUrl ? (
               <div className="space-y-3">
                 <div className="inline-block bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
