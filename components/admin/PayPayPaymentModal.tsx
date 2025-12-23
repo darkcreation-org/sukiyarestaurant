@@ -1,6 +1,4 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { type Order, updateOrderPaymentStatus } from "@/lib/admin-api";
 
@@ -8,7 +6,7 @@ interface PayPayPaymentModalProps {
   order: Order;
   isOpen: boolean;
   onClose: () => void;
-  onPaymentComplete: (orderId: string, paymentStatus: "paid") => void;
+  onPaymentComplete: (orderId: string, paymentStatus: Order["paymentStatus"]) => void;
 }
 
 export default function PayPayPaymentModal({
@@ -17,245 +15,238 @@ export default function PayPayPaymentModal({
   onClose,
   onPaymentComplete,
 }: PayPayPaymentModalProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
-  // Generate QR code data - PayPay payment link format
-  // In production, this would be a real PayPay payment link
-  // For now, we'll create a payment URL with order details
-  const paymentUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/payment/${order.orderId}`;
-  
-  // Generate QR code using a QR code API service
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(paymentUrl)}`;
+  const qrEndpoint = process.env.NEXT_PUBLIC_PAYPAY_QR_ENDPOINT;
 
-  // Format order date and time
-  const orderDate = new Date(order.createdAt).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-  const orderTime = new Date(order.createdAt).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const requestUrl = useMemo(() => {
+    if (!qrEndpoint) return null;
+    // Allow pattern substitution like https://api.example.com/paypay/qr/{orderId}
+    if (qrEndpoint.includes("{orderId}")) {
+      return qrEndpoint.replace("{orderId}", order.orderId);
+    }
+    // Otherwise append as query param
+    const joiner = qrEndpoint.includes("?") ? "&" : "?";
+    return `${qrEndpoint}${joiner}orderId=${order.orderId}`;
+  }, [qrEndpoint, order.orderId]);
 
-  const handleMarkAsPaid = async () => {
-    if (isProcessing) return;
-    
-    setIsProcessing(true);
-    setError(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!requestUrl) {
+      setQrError("PayPay QR endpoint is not configured. Set NEXT_PUBLIC_PAYPAY_QR_ENDPOINT.");
+      return;
+    }
 
+    let cancelled = false;
+    async function fetchQr() {
+      if (!requestUrl) {
+        setQrError("PayPay QR endpoint is not configured. Set NEXT_PUBLIC_PAYPAY_QR_ENDPOINT.");
+        setQrLoading(false);
+        return;
+      }
+
+      try {
+        setQrLoading(true);
+        setQrError(null);
+        setImageLoadError(false);
+        const res = await fetch(requestUrl);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || `QR request failed (${res.status})`);
+        }
+        const data = await res.json();
+        // Prioritize qrUrl (the actual QR code image URL) over paymentUrl (the payment page URL)
+        const url =
+          data?.qrUrl ||
+          data?.paypayQrUrl ||
+          data?.paypayQrCode ||
+          data?.qrCodeUrl ||
+          data?.url;
+        if (!url) {
+          throw new Error("QR URL missing in backend response.");
+        }
+        if (!cancelled) {
+          setQrUrl(url);
+          setImageLoadError(false);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setQrError(error instanceof Error ? error.message : "Failed to load PayPay QR.");
+          setQrUrl(null);
+        }
+      } finally {
+        if (!cancelled) setQrLoading(false);
+      }
+    }
+    fetchQr();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, requestUrl, retryKey]);
+  if (!isOpen) return null;
+  if (typeof document === "undefined") return null;
+
+  const handleConfirm = async () => {
+    if (isSaving) return;
     try {
+      setIsSaving(true);
       const updated = await updateOrderPaymentStatus(order._id, "paid");
-      onPaymentComplete(order._id, "paid");
+      onPaymentComplete(order._id, updated.paymentStatus ?? "paid");
       onClose();
-    } catch (err) {
-      console.error("Failed to update payment status:", err);
-      setError(err instanceof Error ? err.message : "Failed to mark payment as paid");
+    } catch (error) {
+      console.error("Failed to mark PayPay payment as complete:", error);
     } finally {
-      setIsProcessing(false);
+      setIsSaving(false);
     }
   };
 
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!isOpen || !mounted) return null;
-
-  // Ensure document.body exists before creating portal
-  if (typeof document === 'undefined' || !document.body) {
-    return null;
-  }
-
-  const modalContent = (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/70 backdrop-blur-md"
-      onClick={onClose}
-    >
-      <div
-        className="bg-gradient-to-br from-white via-gray-50 to-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border-2 border-white/50 backdrop-blur-sm"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-[#FF6B35] via-[#FF6B35] to-[#FF6B35] px-6 md:px-8 py-6 md:py-7 flex items-center justify-between rounded-t-3xl shadow-lg z-10">
-          <div className="flex-1">
-            <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
-              PayPay Payment
-            </h2>
-            <p className="text-base md:text-lg text-white/95 mt-2 font-medium">
-              Order {order.orderId}
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-extrabold text-gray-900">Complete PayPay Payment</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Confirm that PayPay payment was completed at the counter.
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-white/90 hover:text-white transition-all duration-200 p-3 md:p-4 hover:bg-white/30 rounded-full backdrop-blur-sm min-w-[48px] min-h-[48px] md:min-w-[56px] md:min-h-[56px] flex items-center justify-center"
-            aria-label="Close modal"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Close"
           >
-            <svg
-              className="w-7 h-7 md:w-8 md:h-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={3}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            ×
           </button>
         </div>
 
-        {/* Modal Content */}
-        <div className="p-6 md:p-8">
-          {/* Order Details */}
-          <div className="mb-6 pb-6 border-b-2 border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Order Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <p className="text-sm font-bold text-gray-600 uppercase tracking-wide mb-2">
+        <div className="px-6 py-5 space-y-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
                   Order ID
                 </p>
                 <p className="text-lg font-bold text-gray-900">{order.orderId}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <p className="text-sm font-bold text-gray-600 uppercase tracking-wide mb-2">
-                  Table Number
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">
+                  Amount
                 </p>
-                <p className="text-lg font-bold text-gray-900">Table {order.tableNumber}</p>
+                <p className="text-lg font-extrabold text-gray-900">¥{order.total.toLocaleString()}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <p className="text-sm font-bold text-gray-600 uppercase tracking-wide mb-2">
-                  Customer
-                </p>
-                <p className="text-lg font-bold text-gray-900">{order.displayName}</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <p className="text-sm font-bold text-gray-600 uppercase tracking-wide mb-2">
-                  Order Date
-                </p>
-                <p className="text-sm font-medium text-gray-700">{orderDate}</p>
-                <p className="text-sm font-medium text-gray-700">{orderTime}</p>
-              </div>
+            </div>
+            <div className="mt-3 text-sm text-gray-700">
+              <p className="font-semibold text-gray-800 mb-2">Items</p>
+              <ul className="space-y-1">
+                {order.items.map((item) => (
+                  <li key={item.itemId} className="flex justify-between text-sm text-gray-700">
+                    <span>
+                      {item.quantity}x {item.name}
+                    </span>
+                    <span className="font-semibold">¥{item.price.toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          {/* Payment Amount */}
-          <div className="mb-6 pb-6 border-b-2 border-gray-200">
-            <div className="bg-gradient-to-r from-[#FF6B35]/10 via-[#FF6B35]/5 to-[#FF6B35]/10 rounded-2xl p-6 border-2 border-[#FF6B35]/20">
-              <p className="text-sm font-bold text-gray-600 uppercase tracking-wide mb-2 text-center">
-                Total Amount
+          <div className="bg-white border border-dashed border-gray-300 rounded-xl p-4 text-center">
+            <h3 className="font-bold text-gray-900 mb-3">PayPay QR</h3>
+            {qrLoading ? (
+              <div className="py-6 text-sm text-gray-600 flex items-center justify-center gap-3">
+                <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+                Loading PayPay QR...
+              </div>
+            ) : qrError ? (
+              <p className="text-sm text-red-600">
+                {qrError}
               </p>
-              <p className="text-4xl md:text-5xl font-black text-[#FF6B35] text-center">
-                ¥{order.total.toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          {/* QR Code Section */}
-          <div className="mb-6 pb-6 border-b-2 border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-              Scan to Pay with PayPay
-            </h3>
-            <div className="flex flex-col items-center">
-              {/* QR Code */}
-              <div className="bg-white p-6 rounded-2xl shadow-lg border-4 border-gray-200 mb-4">
-                <img
-                  src={qrCodeUrl}
-                  alt="PayPay QR Code"
-                  className="w-64 h-64 md:w-80 md:h-80"
-                />
-              </div>
-              
-              {/* Instructions */}
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 max-w-md">
-                <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Payment Instructions
-                </h4>
-                <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside">
-                  <li>Open the PayPay app on your smartphone</li>
-                  <li>Tap the &quot;Scan&quot; button in PayPay</li>
-                  <li>Point your camera at the QR code above</li>
-                  <li>Confirm the payment amount: ¥{order.total.toLocaleString()}</li>
-                  <li>Complete the payment in PayPay</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-
-          {/* Order Items Summary */}
-          <div className="mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-3">Order Items</h3>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {order.items.map((item, index) => {
-                const itemTotal = item.quantity * item.price;
-                return (
-                  <div
-                    key={`${item.itemId}-${index}`}
-                    className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-xl border border-gray-200"
-                  >
-                    <div className="flex-1">
-                      <p className="font-bold text-gray-900">{item.name}</p>
-                      <p className="text-sm text-gray-600">
-                        ¥{item.price.toLocaleString()} × {item.quantity}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-gray-900">
-                        ¥{itemTotal.toLocaleString()}
-                      </p>
-                    </div>
+            ) : qrUrl ? (
+              <div className="space-y-3">
+                {imageLoadError ? (
+                  <div className="py-6 text-sm text-red-600">
+                    <p className="font-semibold mb-2">Failed to load QR code image</p>
+                    <p className="text-xs text-gray-500">The QR code URL may be invalid or blocked.</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageLoadError(false);
+                        setQrUrl(null);
+                        setQrError(null);
+                        setRetryKey((prev) => prev + 1);
+                      }}
+                      className="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                    >
+                      Retry
+                    </button>
                   </div>
-                );
-              })}
-            </div>
+                ) : (
+                  <div className="inline-block bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qrUrl}
+                      alt="PayPay QR Code"
+                      className="w-48 h-48 object-contain"
+                      onError={() => {
+                        setImageLoadError(true);
+                        console.error("Failed to load QR code image from:", qrUrl);
+                      }}
+                      onLoad={() => {
+                        setImageLoadError(false);
+                      }}
+                    />
+                  </div>
+                )}
+                {!imageLoadError && (
+                  <a
+                    href={qrUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#ff6b35] hover:bg-[#e55f2f] transition-colors"
+                  >
+                    Open in PayPay
+                  </a>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600">
+                QR code is not available from the backend. Please refresh after the backend provides a PayPay QR URL.
+              </p>
+            )}
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 border border-red-300 rounded-lg text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button
-              onClick={handleMarkAsPaid}
-              disabled={isProcessing || order.paymentStatus === "paid"}
-              className="flex-1 py-4 bg-gradient-to-r from-[#31a354] to-[#31a354] text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
-            >
-              {isProcessing ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Processing...
-                </span>
-              ) : order.paymentStatus === "paid" ? (
-                "Payment Already Completed"
-              ) : (
-                "Mark Payment as Completed"
-              )}
-            </button>
-            <button
-              onClick={onClose}
-              className="px-6 py-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all duration-200"
-            >
-              Close
-            </button>
+          <div className="text-sm text-gray-600">
+            By confirming, this order will be marked as <strong className="text-green-700">Paid</strong> via PayPay.
           </div>
         </div>
+
+        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+            disabled={isSaving}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={isSaving}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#ff6b35] hover:bg-[#e55f2f] disabled:opacity-60 transition-colors"
+          >
+            {isSaving ? "Saving..." : "Mark as Paid"}
+          </button>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
-
-  // Render modal using portal to document body to avoid hydration errors
-  return createPortal(modalContent, document.body);
 }
-

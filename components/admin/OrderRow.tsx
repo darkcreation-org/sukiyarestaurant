@@ -11,6 +11,13 @@ interface OrderRowProps {
   onStatusChange: (orderId: string, newStatus: Order["status"]) => void;
   onPaymentStatusChange: (orderId: string, newPaymentStatus: Order["paymentStatus"]) => void;
 }
+const PAYMENT_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "paypay_complete", label: "Complete with PayPay" },
+  { value: "manual_complete", label: "Complete Manual Pay" },
+  { value: "cancel", label: "Set as Pending / Cancel" },
+] as const;
+
 
 export default function OrderRow({
   order,
@@ -19,6 +26,7 @@ export default function OrderRow({
 }: OrderRowProps) {
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentSelectValue, setPaymentSelectValue] = useState("");
 
   // Format date and time
   const orderDate = new Date(order.createdAt).toLocaleDateString("en-US", {
@@ -57,6 +65,33 @@ export default function OrderRow({
       setIsUpdatingPayment(false);
     }
   };
+  const handlePaymentSelect = async (value: string) => {
+    if (isUpdatingPayment) return;
+
+    setPaymentSelectValue(value);
+
+    if (value === "paypay_complete") {
+      setIsPaymentModalOpen(true);
+      return;
+    }
+
+    try {
+      setIsUpdatingPayment(true);
+
+      let newStatus: Order["paymentStatus"] = "pending";
+
+      if (value === "manual_complete") newStatus = "paid";
+
+      const updated = await updateOrderPaymentStatus(order._id, newStatus);
+      onPaymentStatusChange(order._id, updated.paymentStatus ?? newStatus);
+      setPaymentSelectValue("");
+    } catch (error) {
+      console.error("Failed to update payment status:", error);
+    } finally {
+      setIsUpdatingPayment(false);
+    }
+  };
+
 
   return (
     <>
@@ -121,14 +156,14 @@ export default function OrderRow({
                 </div>
 
                 {!isPaid && (
-                  <div className="ml-auto flex flex-col gap-2">
+                  /*<div className="ml-auto flex flex-col gap-2">
                     {order.paymentMethod === "paypay" && (
                       <button
                         type="button"
                         onClick={() => setIsPaymentModalOpen(true)}
                         className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#FF6B35] text-white shadow-sm hover:shadow-md active:scale-95 transition-all duration-150"
                       >
-                        Update Payment
+                        Update with pay pay QR code
                       </button>
                     )}
                     <button
@@ -139,25 +174,45 @@ export default function OrderRow({
                     >
                       {isUpdatingPayment ? "Saving..." : "Mark as Paid"}
                     </button>
-                  </div>
+                  </div>*/
+                    <div className="ml-auto flex flex-col gap-2">
+                      <select
+                        value={paymentSelectValue}
+                        onChange={(e) => handlePaymentSelect(e.target.value)}
+                        disabled={isUpdatingPayment}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-50"
+                      >
+                        <option value="" disabled>
+                          Select payment status
+                        </option>
+
+                        {PAYMENT_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                        ))}
+                      </select>
+                    </div>
+
                 )}
               </div>
             )}
           </div>
         </td>
       </tr>
-
-      {/* PayPay Payment Modal - Rendered outside table for valid HTML */}
-      {order.paymentMethod === "paypay" && (
-        <PayPayPaymentModal
-          order={order}
-          isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
-          onPaymentComplete={(orderId, paymentStatus) => {
-            onPaymentStatusChange(orderId, paymentStatus);
-          }}
-        />
-      )}
+      <PayPayPaymentModal
+        order={order}
+        isOpen={isPaymentModalOpen}
+        onClose={() => {
+          setIsPaymentModalOpen(false);
+          setPaymentSelectValue("");
+        }}
+        onPaymentComplete={(orderId, paymentStatus) => {
+          onPaymentStatusChange(orderId, paymentStatus);
+          setIsPaymentModalOpen(false);
+          setPaymentSelectValue("");
+        }}
+      />
     </>
   );
 }
