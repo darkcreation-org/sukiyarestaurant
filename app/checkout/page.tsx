@@ -32,16 +32,13 @@ export default function CheckoutPage() {
     // Set table number from user email/login if available
     if (isAuthenticated && user) {
       // Try to get table number from user data
-      if (user.tableId) {
-        setTableNumber(user.tableId);
-      } else if (user.userId?.startsWith("table_")) {
+      if (user.userId?.startsWith("table_")) {
         // Extract table number from userId (format: table_5)
         const tableId = user.userId.replace("table_", "");
         setTableNumber(tableId);
-      } else if (user.email) {
-        // If user has email, you might want to extract table from email or use a default
-        // For now, we'll leave it empty for manual entry
       }
+      // Note: tableId property doesn't exist on AuthUser type
+      // Table number can be extracted from userId or entered manually
     }
   }, [items, router, isAuthenticated, user]);
 
