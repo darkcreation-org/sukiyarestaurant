@@ -8,7 +8,7 @@ function getApiBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  
+
   // Default to production URL
   return 'https://sukiyaapi.vercel.app';
 }
@@ -45,7 +45,7 @@ async function fetchWithTimeout(
     return response;
   } catch (error) {
     clearTimeout(timeoutId);
-    
+
     // Handle timeout/abort errors
     if (error instanceof Error && error.name === 'AbortError') {
       if (retries > 0) {
@@ -55,7 +55,7 @@ async function fetchWithTimeout(
       }
       throw new Error(`Request timeout: The server took too long to respond. This may be due to a cold start. Please try again.`);
     }
-    
+
     // Handle network errors
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
       if (retries > 0) {
@@ -65,7 +65,7 @@ async function fetchWithTimeout(
       }
       throw new Error(`Network error: Cannot connect to backend server at ${API_BASE_URL}. Please check your internet connection and try again.`);
     }
-    
+
     throw error;
   }
 }
@@ -75,7 +75,7 @@ async function fetchWithTimeout(
  */
 async function handleApiError(response: Response, defaultMessage: string): Promise<never> {
   let errorMessage = defaultMessage;
-  
+
   // Handle specific status codes
   if (response.status === 504 || response.status === 502) {
     errorMessage = 'Gateway timeout: The server took too long to respond. This may be due to a cold start. Please try again in a few seconds.';
@@ -88,7 +88,7 @@ async function handleApiError(response: Response, defaultMessage: string): Promi
     try {
       const errorData = await response.json();
       errorMessage = errorData.error || errorData.message || defaultMessage;
-      
+
       // Add details if available
       if (errorData.details && process.env.NODE_ENV === 'development') {
         errorMessage += ` (Details: ${errorData.details})`;
@@ -98,7 +98,7 @@ async function handleApiError(response: Response, defaultMessage: string): Promi
       errorMessage = `Server error: ${response.status} ${response.statusText}`;
     }
   }
-  
+
   throw new Error(errorMessage);
 }
 
@@ -113,7 +113,7 @@ export interface Order {
   paymentMethod?: 'paypay' | 'manual';
   paymentStatus?: 'pending' | 'paid' | null;
   items: Array<{
-     itemId: string;
+    itemId: string;
     name: string;
     quantity: number;
     price: number;
@@ -191,7 +191,7 @@ export async function login(userId: string, password: string): Promise<LoginResp
     }
 
     const requestBody = { userId: userId.trim(), password: password.trim() };
-    
+
     const response = await fetchWithTimeout(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -199,11 +199,11 @@ export async function login(userId: string, password: string): Promise<LoginResp
       },
       body: JSON.stringify(requestBody),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to login');
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -222,11 +222,11 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; user
         'Authorization': `Bearer ${token}`,
       },
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to verify token');
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -245,7 +245,7 @@ export async function setPassword(userId: string, password: string): Promise<voi
       },
       body: JSON.stringify({ userId, password }),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to set password');
     }
@@ -266,11 +266,11 @@ export async function getLineLoginUrl(): Promise<LineLoginResponse> {
         'Content-Type': 'application/json',
       },
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to get LINE login URL');
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -279,6 +279,31 @@ export async function getLineLoginUrl(): Promise<LineLoginResponse> {
     throw new Error('Failed to get LINE login URL');
   }
 }
+
+// LIFF Login API function
+export async function liffLogin(profile: { userId: string; displayName: string; pictureUrl?: string }): Promise<LoginResponse> {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/auth/liff`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profile),
+    });
+
+    if (!response.ok) {
+      await handleApiError(response, 'Failed to authenticate with LIFF');
+    }
+
+    return response.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to authenticate with LIFF');
+  }
+}
+
 
 // Helper function to get auth token from localStorage
 export function getAuthToken(): string | null {
@@ -317,11 +342,11 @@ export async function getOrders(): Promise<Order[]> {
       method: 'GET',
       headers: getAuthHeaders(),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to fetch orders');
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -341,11 +366,11 @@ export async function updateOrderStatus(
       headers: getAuthHeaders(),
       body: JSON.stringify({ status }),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to update order status');
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -389,11 +414,11 @@ export async function getMenuItems(): Promise<MenuItem[]> {
       method: 'GET',
       headers: getAuthHeaders(),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to fetch menu items');
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -410,16 +435,16 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
       headers: getAuthHeaders(),
       body: JSON.stringify(item),
     });
-    
+
     if (!response.ok) {
       // Log response details for debugging
       console.error('Backend error - Status:', response.status, response.statusText);
-      
+
       let errorMessage = 'Failed to create menu item';
       try {
         const errorData = await response.json();
         errorMessage = errorData.error || errorData.message || errorMessage;
-        
+
         // If there are missing fields, include them in the error
         if (errorData.missingFields && Array.isArray(errorData.missingFields)) {
           errorMessage = `${errorMessage} (Missing: ${errorData.missingFields.join(', ')})`;
@@ -428,10 +453,10 @@ export async function createMenuItem(item: Omit<MenuItem, "_id" | "createdAt" | 
         // If JSON parsing fails, use handleApiError
         await handleApiError(response, errorMessage);
       }
-      
+
       throw new Error(errorMessage);
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -448,11 +473,11 @@ export async function updateMenuItem(id: string, updates: Partial<MenuItem>): Pr
       headers: getAuthHeaders(),
       body: JSON.stringify(updates),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to update menu item');
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -468,11 +493,11 @@ export async function deleteMenuItem(id: string): Promise<void> {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to delete menu item');
     }
-    
+
     // Read the response body to ensure the request is fully processed
     try {
       await response.json();
@@ -494,11 +519,11 @@ export async function getUsers(): Promise<User[]> {
       method: 'GET',
       headers: getAuthHeaders(),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to fetch users');
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -515,11 +540,11 @@ export async function getUserById(id: string): Promise<User> {
       method: 'GET',
       headers: getAuthHeaders(),
     });
-    
+
     if (response.ok) {
       return response.json();
     }
-    
+
     // If endpoint doesn't exist (404), fall back to fetching all users and filtering
     if (response.status === 404) {
       const users = await getUsers();
@@ -529,7 +554,7 @@ export async function getUserById(id: string): Promise<User> {
       }
       throw new Error('User not found');
     }
-    
+
     // For other errors, use handleApiError (always throws)
     await handleApiError(response, 'Failed to fetch user');
     // This line will never execute, but satisfies TypeScript's return type check
@@ -548,11 +573,11 @@ export async function getUserByUserId(userId: string): Promise<User> {
       method: 'GET',
       headers: getAuthHeaders(),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to fetch user');
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -569,7 +594,7 @@ export async function createUser(user: Omit<User, "_id" | "createdAt" | "updated
       headers: getAuthHeaders(),
       body: JSON.stringify(user),
     });
-    
+
     if (!response.ok) {
       let errorMessage = 'Failed to create user';
       try {
@@ -583,7 +608,7 @@ export async function createUser(user: Omit<User, "_id" | "createdAt" | "updated
       }
       throw new Error(errorMessage);
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -600,11 +625,11 @@ export async function updateUser(id: string, updates: Partial<User>): Promise<Us
       headers: getAuthHeaders(),
       body: JSON.stringify(updates),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to update user');
     }
-    
+
     return response.json();
   } catch (error) {
     if (error instanceof Error) {
@@ -620,11 +645,11 @@ export async function deleteUser(id: string): Promise<void> {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
-    
+
     if (!response.ok) {
       await handleApiError(response, 'Failed to delete user');
     }
-    
+
     // Read the response body to ensure the request is fully processed
     try {
       await response.json();
