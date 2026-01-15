@@ -1,7 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { login, verifyToken, removeAuthToken, setAuthToken, getAuthToken, getUserById, type AuthUser, type LoginResponse } from "./admin-api";
+import { login, verifyToken, removeAuthToken, setAuthToken, getAuthToken, getUserById, liffLogin, type AuthUser, type LoginResponse } from "./admin-api";
+import { useLiff } from "./liff-provider";
+
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -17,9 +19,37 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { isInLiff, liffProfile, isLiffLoading } = useLiff();
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Wait for LIFF to finish loading
+    if (isLiffLoading) {
+      return;
+    }
+
+    // If we have a LIFF profile and we're in LIFF, authenticate with it
+    if (isInLiff && liffProfile && !user) {
+      console.log("Authenticating with LIFF profile...", liffProfile);
+      liffLogin({
+        userId: liffProfile.userId,
+        displayName: liffProfile.displayName,
+        pictureUrl: liffProfile.pictureUrl,
+      })
+        .then((response: LoginResponse) => {
+          console.log("LIFF authentication successful", response);
+          setAuthToken(response.token);
+          setUser(response.user);
+        })
+        .catch((error) => {
+          console.error("LIFF authentication failed:", error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+      return;
+    }
+
+    // Otherwise, check if user is already logged in via token
     const token = getAuthToken();
     if (token) {
       verifyToken(token)
@@ -39,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setIsLoading(false);
     }
-  }, []);
+  }, [isLiffLoading, isInLiff, liffProfile, user]);
 
   const handleLogin = async (userId: string, password: string) => {
     const response: LoginResponse = await login(userId, password);
@@ -54,11 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleRefreshUser = async () => {
     if (!user) return;
-    
+
     try {
       const userId = user._id || user.id; // AuthUser has both _id and id
       if (!userId) return;
-      
+
       const updatedUser = await getUserById(userId);
       // Convert User to AuthUser format
       const authUser: AuthUser = {
