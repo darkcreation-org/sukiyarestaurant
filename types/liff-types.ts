@@ -48,6 +48,7 @@ export interface LiffObject {
   getContext: () => LiffContext | null;
   openWindow: (params: { url: string; external?: boolean }) => void;
   closeWindow: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   shareTargetPicker: (messages: any[]) => Promise<any>;
   scanCode: () => Promise<{ value: string | null }>;
   permanentLink: {
@@ -61,4 +62,4 @@ declare global {
   }
 }
 
-export {};
+export { };
