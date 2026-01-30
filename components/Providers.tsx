@@ -7,7 +7,8 @@ import Header from "@/components/Header";
 import { UIProvider } from "@/context/UIContext";
 import { CartProvider } from "@/context/CartContext";
 import CartDrawer from "@/components/CartDrawer";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import React, { useEffect } from "react";
 
 function ConditionalHeader() {
   const pathname = usePathname();
@@ -38,6 +39,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <LiffProvider>
             <AuthProvider>
+              <React.Suspense fallback={null}>
+                <TableNumberCapture />
+              </React.Suspense>
               <ConditionalHeader />
               {children}
               <ConditionalCartDrawer />
@@ -47,5 +51,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
       </CartProvider>
     </UIProvider>
   );
+}
+
+function TableNumberCapture() {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const tableNumber = searchParams.get("tableNumber");
+    if (tableNumber) {
+      localStorage.setItem("active_table_number", tableNumber);
+    }
+  }, [searchParams]);
+
+  return null;
 }
 

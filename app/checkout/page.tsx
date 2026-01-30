@@ -44,8 +44,13 @@ function CheckoutPage() {
       return;
     }
 
-    // Priority 2: Set table number from authenticated user if available
-    if (isAuthenticated && user) {
+    // Priority 2: Set table number from local storage
+    const savedTableNumber = localStorage.getItem("active_table_number");
+    if (savedTableNumber) {
+      setTableNumber(savedTableNumber);
+    }
+    // Priority 3: Set table number from authenticated user if available
+    else if (isAuthenticated && user) {
       // Try to get table number from user data
       if (user.userId?.startsWith("table_")) {
         // Extract table number from userId (format: table_5)
