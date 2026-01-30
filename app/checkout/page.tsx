@@ -29,6 +29,27 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Priority 1: Get table number from URL query params (e.g., /checkout?table=5)
+    const tableFromUrl = searchParams.get("table") || searchParams.get("tableNumber");
+    if (tableFromUrl) {
+      setTableNumber(tableFromUrl);
+
+      // If not authenticated, redirect to login with table number preserved
+      if (!isAuthenticated) {
+        const loginUrl = `/login?redirect=/checkout&table=${encodeURIComponent(tableFromUrl)}`;
+        router.push(loginUrl);
+        return;
+      }
+      return;
+    }
+
+    // Priority 2: Set table number from local storage
+    const savedTableNumber = localStorage.getItem("active_table_number");
+    if (savedTableNumber) {
+      setTableNumber(savedTableNumber);
+    }
+    // Priority 3: Set table number from authenticated user if available
+    else if (isAuthenticated && user) {
     // Set table number from user email/login if available
     if (isAuthenticated && user) {
       // Try to get table number from user data
