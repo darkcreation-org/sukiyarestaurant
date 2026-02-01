@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
-import Link from "next/link";
+import { useState, useEffect, Suspense, useCallback } from "react";
+import { useParams } from "next/navigation";
+import { useTranslations } from 'next-intl';
+import { useRouter, Link } from '@/i18n/routing';
 
 interface Order {
   _id: string;
@@ -27,43 +27,43 @@ interface Order {
 }
 
 function PaymentContent() {
+  const t = useTranslations('Payment');
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
   const orderId = params.orderId as string;
-  
+
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!orderId) return;
-    fetchOrder();
-  }, [orderId]);
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       setLoading(true);
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "https://sukiyaapi.vercel.app";
       const response = await fetch(`${apiBaseUrl}/api/orders/${orderId}`);
-      
+
       if (!response.ok) {
         throw new Error("Order not found");
       }
-      
+
       const orderData = await response.json();
       setOrder(orderData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load order");
+      setError(err instanceof Error ? err.message : t('loading'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId, t]);
+
+  useEffect(() => {
+    if (!orderId) return;
+    fetchOrder();
+  }, [orderId, fetchOrder]);
 
   const handlePayment = async () => {
     if (!order || !order._id) return;
-    
+
     setProcessing(true);
     setError(null);
 
@@ -86,7 +86,7 @@ function PaymentContent() {
 
       const updatedOrder = await response.json();
       setOrder(updatedOrder);
-      
+
       // Redirect to success page
       router.push(`/payment/success?orderId=${order.orderId}`);
     } catch (err) {
@@ -103,7 +103,7 @@ function PaymentContent() {
           <div className="max-w-2xl mx-auto text-center">
             <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-8">
               <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading order...</p>
+              <p className="text-gray-600">{t('loading')}</p>
             </div>
           </div>
         </div>
@@ -122,13 +122,13 @@ function PaymentContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold mb-4">Error</h1>
+              <h1 className="text-2xl font-bold mb-4">{t('error')}</h1>
               <p className="text-gray-600 mb-6">{error}</p>
               <Link
                 href="/"
                 className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-all duration-200"
               >
-                Back to Menu
+                {t('backToMenu')}
               </Link>
             </div>
           </div>
@@ -154,15 +154,15 @@ function PaymentContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h1 className="text-3xl font-bold mb-4">Payment Already Completed</h1>
+                <h1 className="text-3xl font-bold mb-4">{t('alreadyPaid')}</h1>
                 <p className="text-gray-600 mb-6">
-                  This order has already been paid. Thank you!
+                  {t('alreadyPaidDesc')}
                 </p>
                 <Link
                   href="/"
                   className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-all duration-200"
                 >
-                  Back to Menu
+                  {t('backToMenu')}
                 </Link>
               </div>
             </div>
@@ -180,15 +180,15 @@ function PaymentContent() {
           <div className="max-w-2xl mx-auto">
             <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-8">
               <div className="text-center">
-                <h1 className="text-2xl font-bold mb-4">Invalid Payment Method</h1>
+                <h1 className="text-2xl font-bold mb-4">{t('invalidMethod')}</h1>
                 <p className="text-gray-600 mb-6">
-                  This order is set for manual payment at the counter.
+                  {t('invalidMethodDesc')}
                 </p>
                 <Link
                   href="/"
                   className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-all duration-200"
                 >
-                  Back to Menu
+                  {t('backToMenu')}
                 </Link>
               </div>
             </div>
@@ -202,23 +202,23 @@ function PaymentContent() {
     <main className="flex min-h-screen bg-background transition-colors duration-300">
       <div className="inner-wrapper flex-col mt-[100px] py-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Complete Payment</h1>
+          <h1 className="text-3xl font-bold mb-6">{t('title')}</h1>
 
           <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+            <h2 className="text-xl font-bold mb-4">{t('summary')}</h2>
             <div className="space-y-2 mb-4">
               <div className="flex justify-between">
-                <span className="text-gray-600">Order ID:</span>
+                <span className="text-gray-600">{t('orderId')}:</span>
                 <span className="font-bold">{order.orderId}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Table:</span>
-                <span className="font-bold">Table {order.tableNumber}</span>
+                <span className="text-gray-600">{t('table')}:</span>
+                <span className="font-bold">{t('table')} {order.tableNumber}</span>
               </div>
             </div>
 
             <div className="border-t pt-4 mb-4">
-              <h3 className="font-bold mb-2">Items:</h3>
+              <h3 className="font-bold mb-2">{t('items')}:</h3>
               <div className="space-y-2">
                 {order.items.map((item, index) => (
                   <div key={index} className="flex justify-between text-sm">
@@ -233,14 +233,14 @@ function PaymentContent() {
 
             <div className="border-t pt-4">
               <div className="flex justify-between text-xl font-bold">
-                <span>Total:</span>
+                <span>{t('total')}:</span>
                 <span>¥{order.total.toLocaleString()}</span>
               </div>
             </div>
           </div>
 
           <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4">Payment Method</h2>
+            <h2 className="text-xl font-bold mb-4">{t('method')}</h2>
             <div className="flex items-center p-4 border-2 border-primary rounded-xl bg-primary/5">
               <div className="w-12 h-12 bg-[#FF6B35] rounded-lg flex items-center justify-center text-white font-bold mr-4">
                 PP
@@ -267,17 +267,17 @@ function PaymentContent() {
               {processing ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Processing Payment...
+                  {t('processing')}
                 </span>
               ) : (
-                `Pay ¥${order.total.toLocaleString()} with PayPay`
+                t('payWithPayPay', { amount: order.total.toLocaleString() })
               )}
             </button>
             <Link
               href="/"
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all duration-200 text-center"
             >
-              Cancel
+              {t('cancel')}
             </Link>
           </div>
         </div>
@@ -287,13 +287,14 @@ function PaymentContent() {
 }
 
 export default function PaymentPage() {
+  const t = useTranslations('Payment');
   return (
     <Suspense fallback={
       <main className="flex min-h-screen bg-background transition-colors duration-300">
         <div className="inner-wrapper flex-col mt-[100px] py-8">
           <div className="max-w-2xl mx-auto text-center">
             <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-8">
-              <p>Loading...</p>
+              <p>{t('loading')}</p>
             </div>
           </div>
         </div>

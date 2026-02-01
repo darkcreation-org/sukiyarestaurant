@@ -1,23 +1,25 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/lib/auth-context";
-import Link from "next/link";
+import { useTranslations } from 'next-intl';
+import { Link, useRouter } from '@/i18n/routing';
 import PayPayCheckoutModal from "@/components/PayPayCheckoutModal";
 
 type PaymentMethod = "manual" | "paypay";
 type PayPayTiming = "now" | "after";
 
 function CheckoutPage() {
+  const t = useTranslations('Checkout');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { items, totalCartAmount, dispatch } = useCart();
   const { user, isAuthenticated } = useAuth();
   const [tableNumber, setTableNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("manual");
-  const [payPayTiming, setPayPayTiming] = useState<PayPayTiming>("after");
+  const [payPayTiming] = useState<PayPayTiming>("after");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPayPayModal, setShowPayPayModal] = useState(false);
@@ -68,7 +70,7 @@ function CheckoutPage() {
     e.preventDefault();
 
     if (!tableNumber.trim()) {
-      setError("Please enter your table number");
+      setError(t('tableId') + " required");
       return;
     }
 
@@ -255,8 +257,8 @@ function CheckoutPage() {
         <div className="inner-wrapper flex-col mt-[100px] py-6 px-4 md:px-6">
           <div className="max-w-6xl mx-auto w-full">
             <div className="mb-6">
-              <h1 className="text-4xl md:text-5xl font-semibold mb-3 text-gray-900">Checkout</h1>
-              <p className="text-gray-600 text-base">Review your order and complete your purchase</p>
+              <h1 className="text-4xl md:text-5xl font-semibold mb-3 text-gray-900">{t('title')}</h1>
+              <p className="text-gray-600 text-base">{t('review')}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -269,7 +271,7 @@ function CheckoutPage() {
                       <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
-                      Order Items
+                      {t('orderItems')}
                     </h2>
                     <div className="space-y-4">
                       {items.map((item) => (
@@ -309,7 +311,7 @@ function CheckoutPage() {
                       <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
-                      Payment Method
+                      {t('paymentMethod')}
                     </h2>
                     <div className="flex flex-row gap-4">
                       {/* Manual Payment Option */}
@@ -328,9 +330,9 @@ function CheckoutPage() {
                         />
                         <div className="text-center">
                           <div className="flex items-center justify-center mb-1">
-                            <span className="text-lg font-semibold text-gray-800">Pay at Counter</span>
+                            <span className="text-lg font-semibold text-gray-800">{t('payAtCounter')}</span>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">Pay when ready</p>
+                          <p className="text-sm text-gray-600 mt-1">{t('payWhenReady')}</p>
                         </div>
                       </label>
 
@@ -356,9 +358,9 @@ function CheckoutPage() {
                         />
                         <div className="text-center">
                           <div className="flex items-center justify-center mb-1">
-                            <span className="text-lg font-semibold text-gray-800">PayPay</span>
+                            <span className="text-lg font-semibold text-gray-800">{t('payPay')}</span>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">Pay with PayPay</p>
+                          <p className="text-sm text-gray-600 mt-1">{t('payWithPayPay')}</p>
                         </div>
                       </label>
                     </div>
@@ -372,10 +374,10 @@ function CheckoutPage() {
                       <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                      Order Summary
+                      {t('orderSummary')}
                     </h2>
                     <div className="flex justify-between items-center text-sm text-gray-600">
-                      <span>Table ID</span>
+                      <span>{t('tableId')}</span>
                       <span className="font-semibold text-orange-600 bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
                         #{tableNumber}
                       </span>
@@ -397,12 +399,12 @@ function CheckoutPage() {
 
                       {isAuthenticated && user?.email && (
                         <div className="flex justify-between items-center text-xs text-gray-500 pt-1">
-                          <span>User</span>
+                          <span>{t('user')}</span>
                           <span className="truncate max-w-[150px]">{user.email}</span>
                         </div>
                       )}
                       <div className="flex justify-between items-center border-t border-orange-100 pt-3">
-                        <span className="text-xl font-semibold text-gray-800">Total</span>
+                        <span className="text-xl font-semibold text-gray-800">{t('total')}</span>
                         <span className="text-2xl font-bold text-orange-600">¥{totalCartAmount.toLocaleString()}</span>
                       </div>
                     </div>
@@ -443,14 +445,14 @@ function CheckoutPage() {
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                             ></path>
                           </svg>
-                          <span>Placing Order...</span>
+                          <span>{t('placingOrder')}</span>
                         </>
                       ) : (
                         <>
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                          <span>Place Order</span>
+                          <span>{t('placeOrder')}</span>
                         </>
                       )}
                     </button>
@@ -459,7 +461,7 @@ function CheckoutPage() {
                       href="/"
                       className="block w-full mt-3 py-3 text-center bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200 border border-gray-200 hover:border-gray-300"
                     >
-                      Continue Shopping
+                      {t('continueShopping')}
                     </Link>
                   </div>
                 </div>

@@ -1,0 +1,109 @@
+{
+    "Header": {
+        "title": "Sukiya Restaurant",
+        "cart": "Cart"
+    },
+    "Home": {
+        "hello": "Hello!",
+        "welcome": "Warmly welcome to our restaurant",
+        "noItems": "No menu items available at the moment."
+    },
+    "Checkout": {
+        "title": "Checkout",
+        "review": "Review your order and complete your purchase",
+        "orderItems": "Order Items",
+        "tableInfo": "Table Information",
+        "tableId": "Table ID",
+        "paymentMethod": "Payment Method",
+        "payAtCounter": "Pay at Counter",
+        "payWhenReady": "Pay when ready",
+        "payPay": "PayPay",
+        "payWithPayPay": "Pay with PayPay",
+        "orderSummary": "Order Summary",
+        "total": "Total",
+        "placeOrder": "Place Order",
+        "placingOrder": "Placing Order...",
+        "continueShopping": "Continue Shopping",
+        "user": "User"
+    },
+    "Cart": {
+        "title": "Your Cart",
+        "empty": "Your cart is empty",
+        "checkout": "Proceed to Checkout",
+        "backToMenu": "Back to Menu",
+        "summary": "Summary",
+        "each": "each",
+        "addons": "Addons",
+        "editAddons": "Edit Addons",
+        "addAddons": "Add Addons",
+        "remove": "Remove",
+        "loading": "Loading cart..."
+    },
+    "Common": {
+        "price": "Price",
+        "dishes": "Dishes",
+        "amount": "Amount",
+        "addToCart": "Add to Cart",
+        "checkout": "Checkout",
+        "orderDish": "Order Dish",
+        "close": "Close"
+    },
+    "Login": {
+        "title": "Welcome",
+        "signInToContinue": "Sign in to continue",
+        "authenticating": "Authenticating with LINE...",
+        "initializing": "Initializing LINE authentication...",
+        "signInWithLine": "Sign in with LINE",
+        "loading": "Loading...",
+        "failed": "Failed to initiate LINE login"
+    },
+    "AddonSelector": {
+        "title": "Select Addons",
+        "noAddons": "No addons available",
+        "cancel": "Cancel",
+        "save": "Save Addons",
+        "loading": "Loading addons..."
+    },
+    "Payment": {
+        "title": "Complete Payment",
+        "summary": "Order Summary",
+        "orderId": "Order ID",
+        "table": "Table",
+        "items": "Items",
+        "total": "Total",
+        "method": "Payment Method",
+        "payWithPayPay": "Pay ¥{amount} with PayPay",
+        "processing": "Processing Payment...",
+        "alreadyPaid": "Payment Already Completed",
+        "alreadyPaidDesc": "This order has already been paid. Thank you!",
+        "invalidMethod": "Invalid Payment Method",
+        "invalidMethodDesc": "This order is set for manual payment at the counter.",
+        "error": "Error",
+        "backToMenu": "Back to Menu",
+        "cancel": "Cancel",
+        "loading": "Loading order..."
+    },
+    "PaymentSuccess": {
+        "title": "Payment Successful!",
+        "orderId": "Order ID",
+        "thankYou": "Thank you for your payment!",
+        "paidDesc": "Your order has been fully paid.",
+        "enjoyDesc": "We hope you enjoyed your meal! Thank you for dining with us.",
+        "backToMenu": "Back to Menu",
+        "loading": "Loading..."
+    },
+    "PayPayModal": {
+        "title": "PayPay Payment",
+        "chooseTiming": "Choose when you want to pay:",
+        "payAfter": "Pay After Dining",
+        "payNow": "Pay Now",
+        "loadingQR": "Loading PayPay QR code...",
+        "retry": "Retry",
+        "amount": "Amount",
+        "failedQR": "Failed to load PayPay QR.",
+        "failedImage": "Failed to load QR image",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "process": "Process Payment"
+    }
+}

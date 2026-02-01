@@ -1,5 +1,6 @@
 import MenuItemCard from "@/components/MenuItemCard";
 import { IMenuItem } from "@/types/menu-types";
+import { getTranslations, getLocale } from 'next-intl/server';
 
 // Get API base URL - use sukiya-api backend
 function getApiBaseUrl(): string {
@@ -7,12 +8,12 @@ function getApiBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  
+
   // Default to production API URL
   return 'https://sukiyaapi.vercel.app';
 }
 
-async function getMenuItems(): Promise<IMenuItem[]> {
+async function getMenuItems(locale: string): Promise<IMenuItem[]> {
   try {
     // Fetch from sukiya-api backend
     const apiBaseUrl = getApiBaseUrl();
@@ -31,9 +32,8 @@ async function getMenuItems(): Promise<IMenuItem[]> {
     }
 
     const data = await response.json();
-    
+
     // Map API response to IMenuItem format
-    // API returns: nameEn, nameJp, price, imageUrl, category, subcategory, isActive, etc.
     interface ApiMenuItem {
       id?: string;
       _id?: string;
@@ -49,9 +49,9 @@ async function getMenuItems(): Promise<IMenuItem[]> {
       .filter((item: ApiMenuItem) => item.isActive !== false) // Only show active items
       .map((item: ApiMenuItem) => ({
         id: item.id || item._id || '',
-        title: item.nameEn || item.nameJp || 'Untitled',
+        title: locale === 'ja' ? (item.nameJp || item.nameEn || '無題') : (item.nameEn || item.nameJp || 'Untitled'),
         price: item.price || 0,
-        description: `${item.nameEn || ''} - ${item.nameJp || ''}`.trim() || 'Delicious dish from our kitchen',
+        description: locale === 'ja' ? (item.nameJp || item.nameEn || '') : (item.nameEn || item.nameJp || ''),
         image: item.imageUrl || '/kottu.jpg',
         isAvailable: item.isActive !== false,
         category: item.category || '',
@@ -64,13 +64,16 @@ async function getMenuItems(): Promise<IMenuItem[]> {
 }
 
 export default async function Home() {
-  const menuItems = await getMenuItems();
+  const locale = await getLocale();
+  const t = await getTranslations('Home');
+  const menuItems = await getMenuItems(locale);
 
   return (
     <main className="flex min-h-screen bg-background transition-colors duration-300">
       <div className="inner-wrapper flex-col mt-[100px]">
-        <h1 className="">Hello!</h1>
-        <p>Warmly welcome to our restaurant</p>
+        <h1 className="text-3xl font-bold">{t('hello')}</h1>
+        <p className="text-muted-foreground">{t('welcome')}</p>
+
         {menuItems.length > 0 ? (
           <div className="grid grid-cols-2 gap-2 w-full md:grid-cols-3 lg:grid-cols-4 mt-8 md:gap-4">
             {menuItems.map((item) => (
@@ -79,7 +82,7 @@ export default async function Home() {
           </div>
         ) : (
           <div className="mt-8 text-center text-muted-foreground">
-            <p>No menu items available at the moment.</p>
+            <p>{t('noItems')}</p>
           </div>
         )}
       </div>

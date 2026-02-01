@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/context/CartContext";
 import { IMenuItem } from "@/types/menu-types";
 import Image from "next/image";
+import { useLocale, useTranslations } from "next-intl";
 
 interface AddonSelectorProps {
   parentItemId: string;
@@ -11,18 +12,20 @@ interface AddonSelectorProps {
 }
 
 export default function AddonSelector({ parentItemId, onClose }: AddonSelectorProps) {
+  const t = useTranslations('AddonSelector');
+  const locale = useLocale();
   const { items, dispatch } = useCart();
   const [addonItems, setAddonItems] = useState<IMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAddons, setSelectedAddons] = useState<Map<string, number>>(new Map());
 
   // Get existing addons for this item - memoized to prevent infinite loops
-  const parentItem = useMemo(() => 
+  const parentItem = useMemo(() =>
     items.find(item => item.id === parentItemId),
     [items, parentItemId]
   );
-  
-  const existingAddons = useMemo(() => 
+
+  const existingAddons = useMemo(() =>
     parentItem?.addons || [],
     [parentItem?.addons]
   );
@@ -32,7 +35,7 @@ export default function AddonSelector({ parentItemId, onClose }: AddonSelectorPr
     // Get current parent item and its addons
     const currentParentItem = items.find(item => item.id === parentItemId);
     const currentExistingAddons = currentParentItem?.addons || [];
-    
+
     // Initialize selected addons from existing addons
     const initialSelected = new Map<string, number>();
     currentExistingAddons.forEach(addon => {
@@ -67,9 +70,9 @@ export default function AddonSelector({ parentItemId, onClose }: AddonSelectorPr
           }
           const mappedItems: IMenuItem[] = data.map((item: ApiMenuItem) => ({
             id: item._id || item.id,
-            title: item.nameEn || item.nameJp,
+            title: locale === 'ja' ? (item.nameJp || item.nameEn || '無題') : (item.nameEn || item.nameJp || 'Untitled'),
             price: item.price,
-            description: item.nameJp || item.nameEn,
+            description: locale === 'ja' ? (item.nameJp || item.nameEn || '') : (item.nameEn || item.nameJp || ''),
             image: item.imageUrl,
             isAvailable: item.isActive,
             category: item.category,
@@ -86,7 +89,7 @@ export default function AddonSelector({ parentItemId, onClose }: AddonSelectorPr
     };
 
     fetchAddons();
-  }, [parentItemId]); // Only fetch when parentItemId changes
+  }, [parentItemId, locale]); // Only fetch when parentItemId or locale changes
 
   const updateAddonQuantity = (addonId: string, quantity: number) => {
     const newSelected = new Map(selectedAddons);
@@ -132,7 +135,7 @@ export default function AddonSelector({ parentItemId, onClose }: AddonSelectorPr
     return (
       <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
         <div className="bg-white rounded-lg p-6">
-          <p>Loading addons...</p>
+          <p>{t('loading')}</p>
         </div>
       </div>
     );
@@ -148,7 +151,7 @@ export default function AddonSelector({ parentItemId, onClose }: AddonSelectorPr
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Select Addons</h2>
+          <h2 className="text-2xl font-bold">{t('title')}</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -159,7 +162,7 @@ export default function AddonSelector({ parentItemId, onClose }: AddonSelectorPr
 
         <div className="space-y-4 mb-6">
           {addonItems.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No addons available</p>
+            <p className="text-gray-500 text-center py-8">{t('noAddons')}</p>
           ) : (
             addonItems.map((addon) => {
               const quantity = selectedAddons.get(addon.id) || 0;
@@ -207,13 +210,13 @@ export default function AddonSelector({ parentItemId, onClose }: AddonSelectorPr
             onClick={onClose}
             className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300"
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             onClick={handleSave}
             className="flex-1 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90"
           >
-            Save Addons
+            {t('save')}
           </button>
         </div>
       </div>

@@ -1,13 +1,16 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import AddonSelector from "@/components/AddonSelector";
+import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/routing';
 
 function CartContent() {
+    const t = useTranslations('Cart');
     const router = useRouter();
     const searchParams = useSearchParams();
     const tableFromQr = searchParams.get("table") || searchParams.get("tableNumber");
@@ -16,13 +19,13 @@ function CartContent() {
 
     if (items.length === 0) {
         return (
-            <div className="flex min-h-screen bg-background">
+            <div className="flex min-h-screen bg-background transition-colors duration-300">
                 <div className="inner-wrapper flex-col mt-[100px] py-8">
-                    <h1 className="text-3xl font-bold mb-4">Your Cart</h1>
+                    <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
                     <div className="text-center py-12">
-                        <p className="text-xl text-gray-600 mb-4">Your cart is empty</p>
+                        <p className="text-xl text-gray-600 mb-4">{t('empty')}</p>
                         <Button onClick={() => router.push("/")} className="bg-primary text-white">
-                            Continue Shopping
+                            {t('backToMenu')}
                         </Button>
                     </div>
                 </div>
@@ -31,9 +34,9 @@ function CartContent() {
     }
 
     return (
-        <div className="flex min-h-screen bg-background">
+        <div className="flex min-h-screen bg-background transition-colors duration-300">
             <div className="inner-wrapper flex-col mt-[100px] py-8">
-                <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
+                <h1 className="text-3xl font-bold mb-6">{t('title')}</h1>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Cart Items */}
@@ -63,7 +66,7 @@ function CartContent() {
                                                 {item.title}
                                             </h3>
                                             <p className="text-sm text-gray-600 mb-2">
-                                                ¥{item.price.toLocaleString()} each
+                                                ¥{item.price.toLocaleString()} {t('each')}
                                             </p>
 
                                             {/* Quantity Controls */}
@@ -103,7 +106,7 @@ function CartContent() {
                                             {/* Addons Display */}
                                             {item.addons && item.addons.length > 0 && (
                                                 <div className="mt-2 pt-2 border-t border-gray-200">
-                                                    <p className="text-sm font-semibold text-gray-700 mb-1">Addons:</p>
+                                                    <p className="text-sm font-semibold text-gray-700 mb-1">{t('addons')}:</p>
                                                     {item.addons.map((addon) => (
                                                         <div key={addon.id} className="flex justify-between text-sm mb-1">
                                                             <span className="text-gray-600">
@@ -123,7 +126,7 @@ function CartContent() {
                                                     onClick={() => setSelectedItemForAddons(item.id)}
                                                     className="text-xs flex-1 min-w-[100px]"
                                                 >
-                                                    {item.addons && item.addons.length > 0 ? "Edit Addons" : "Add Addons"}
+                                                    {item.addons && item.addons.length > 0 ? t('editAddons') : t('addAddons')}
                                                 </Button>
                                                 <Button
                                                     variant="outline"
@@ -136,7 +139,7 @@ function CartContent() {
                                                     }}
                                                     className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 flex-1 min-w-[100px]"
                                                 >
-                                                    Remove
+                                                    {t('remove')}
                                                 </Button>
                                             </div>
                                         </div>
@@ -149,7 +152,7 @@ function CartContent() {
                     {/* Order Summary */}
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 sticky top-[100px]">
-                            <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+                            <h2 className="text-xl font-bold mb-4">{t('summary')}</h2>
 
                             <div className="space-y-2 mb-4">
                                 {items.map((item) => {
@@ -183,7 +186,7 @@ function CartContent() {
                                     }}
                                     className="w-full bg-primary text-white hover:bg-primary/90 py-3 text-lg font-bold"
                                 >
-                                    Proceed to Checkout
+                                    {t('checkout')}
                                 </Button>
 
                                 <Button
@@ -197,7 +200,7 @@ function CartContent() {
                                     }}
                                     className="w-full mt-3"
                                 >
-                                    Continue Shopping
+                                    {t('backToMenu')}
                                 </Button>
                             </div>
                         </div>
@@ -217,12 +220,13 @@ function CartContent() {
 }
 
 export default function CartPage() {
+    const t = useTranslations('Cart');
     return (
         <Suspense fallback={
             <div className="flex min-h-screen bg-background">
                 <div className="inner-wrapper flex-col mt-[100px] py-8">
-                    <h1 className="text-3xl font-bold mb-4">Your Cart</h1>
-                    <p className="text-muted-foreground">Loading cart...</p>
+                    <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
+                    <p className="text-muted-foreground">{t('loading')}</p>
                 </div>
             </div>
         }>

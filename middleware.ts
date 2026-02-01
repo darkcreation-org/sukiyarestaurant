@@ -1,5 +1,9 @@
+import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { routing } from './i18n/routing';
+
+const intlMiddleware = createMiddleware(routing);
 
 export function middleware(request: NextRequest) {
   // Handle CORS preflight requests
@@ -15,19 +19,21 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  // Add CORS headers to all API responses
-  const response = NextResponse.next();
-  
+  // Handle API routes with CORS
   if (request.nextUrl.pathname.startsWith('/api')) {
+    const response = NextResponse.next();
     response.headers.set('Access-Control-Allow-Origin', '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return response;
   }
 
-  return response;
+  // Handle internationalization for other routes
+  return intlMiddleware(request);
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  // Match only internationalized pathnames
+  matcher: ['/', '/(ja|en)/:path*', '/api/:path*']
 };
 

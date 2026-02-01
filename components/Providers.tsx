@@ -7,7 +7,8 @@ import Header from "@/components/Header";
 import { UIProvider } from "@/context/UIContext";
 import { CartProvider } from "@/context/CartContext";
 import CartDrawer from "@/components/CartDrawer";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { usePathname } from "@/i18n/routing";
 import React, { useEffect } from "react";
 
 function ConditionalHeader() {
