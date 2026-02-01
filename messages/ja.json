@@ -1,0 +1,109 @@
+{
+    "Header": {
+        "title": "すき家レストラン",
+        "cart": "カート"
+    },
+    "Home": {
+        "hello": "こんにちは！",
+        "welcome": "私たちのレストランへ温かく歓迎いたします",
+        "noItems": "現在、メニューアイテムはありません。"
+    },
+    "Checkout": {
+        "title": "チェックアウト",
+        "review": "注文内容を確認し、購入を完了してください",
+        "orderItems": "注文内容",
+        "tableInfo": "テーブル情報",
+        "tableId": "テーブルID",
+        "paymentMethod": "お支払い方法",
+        "payAtCounter": "カウンターで支払い",
+        "payWhenReady": "準備ができたらお支払い",
+        "payPay": "PayPay",
+        "payWithPayPay": "PayPayで支払う",
+        "orderSummary": "注文の要約",
+        "total": "合計",
+        "placeOrder": "注文を確定する",
+        "placingOrder": "注文を確定中...",
+        "continueShopping": "ショッピングを続ける",
+        "user": "ユーザー"
+    },
+    "Cart": {
+        "title": "ショッピングカート",
+        "empty": "カートは空です",
+        "checkout": "チェックアウトへ進む",
+        "backToMenu": "メニューに戻る",
+        "summary": "概要",
+        "each": "につき",
+        "addons": "追加アイテム",
+        "editAddons": "追加アイテムを編集",
+        "addAddons": "追加アイテムを追加",
+        "remove": "削除",
+        "loading": "カートを読み込み中..."
+    },
+    "Common": {
+        "price": "価格",
+        "dishes": "料理",
+        "amount": "金額",
+        "addToCart": "カートに追加",
+        "checkout": "チェックアウト",
+        "orderDish": "注文する",
+        "close": "閉じる"
+    },
+    "Login": {
+        "title": "ようこそ",
+        "signInToContinue": "続行するにはサインインしてください",
+        "authenticating": "LINEで認証中...",
+        "initializing": "LINE認証を初期化中...",
+        "signInWithLine": "LINEでログイン",
+        "loading": "読み込み中...",
+        "failed": "LINEログインの開始に失敗しました"
+    },
+    "AddonSelector": {
+        "title": "追加アイテムを選択",
+        "noAddons": "追加アイテムはありません",
+        "cancel": "キャンセル",
+        "save": "保存",
+        "loading": "読み込み中..."
+    },
+    "Payment": {
+        "title": "お支払い",
+        "summary": "注文内容",
+        "orderId": "注文番号",
+        "table": "テーブル",
+        "items": "商品",
+        "total": "合計",
+        "method": "お支払い方法",
+        "payWithPayPay": "PayPayで¥{amount}を支払う",
+        "processing": "お支払い処理中...",
+        "alreadyPaid": "お支払い済み",
+        "alreadyPaidDesc": "この注文はお支払い済みです。ありがとうございます！",
+        "invalidMethod": "無効なお支払い方法",
+        "invalidMethodDesc": "この注文はレジでの支払い（マニュアル）に設定されています。",
+        "error": "エラー",
+        "backToMenu": "メニューに戻る",
+        "cancel": "キャンセル",
+        "loading": "注文を読み込み中..."
+    },
+    "PaymentSuccess": {
+        "title": "お支払い完了！",
+        "orderId": "注文番号",
+        "thankYou": "お支払いありがとうございます！",
+        "paidDesc": "注文内容の支払いが完了しました。",
+        "enjoyDesc": "お食事をお楽しみいただけたなら幸いです。またのご来店をお待ちしております。",
+        "backToMenu": "メニューに戻る",
+        "loading": "読み込み中..."
+    },
+    "PayPayModal": {
+        "title": "PayPayでお支払い",
+        "chooseTiming": "お支払い時期を選択してください：",
+        "payAfter": "食後にお支払い（レジ）",
+        "payNow": "今すぐお支払い（PayPay）",
+        "loadingQR": "PayPay QRコードを読み込み中...",
+        "retry": "再試行",
+        "amount": "金額",
+        "failedQR": "PayPay QRの読み込みに失敗しました。",
+        "failedImage": "QR画像の読み込みに失敗しました",
+        "cancel": "キャンセル",
+        "confirm": "確認",
+        "process": "お支払いへ進む"
+    }
+}

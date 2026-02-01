@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getOrders, type Order } from "@/lib/admin-api";
+import { getOrders } from "@/lib/admin-api";
 
 interface Notification {
   id: string;
@@ -15,7 +15,6 @@ interface Notification {
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
@@ -23,18 +22,17 @@ export default function NotificationsPage() {
     async function fetchData() {
       try {
         const ordersData = await getOrders();
-        setOrders(ordersData);
-        
+
         // Generate notifications from orders
         const generatedNotifications: Notification[] = [];
-        
+
         // Recent orders (last 24 hours) - treat as new notifications
         const oneDayAgo = new Date();
         oneDayAgo.setHours(oneDayAgo.getHours() - 24);
-        
+
         ordersData.forEach((order) => {
           const orderDate = new Date(order.createdAt);
-          
+
           if (orderDate >= oneDayAgo) {
             generatedNotifications.push({
               id: `order-${order._id}`,
@@ -46,7 +44,7 @@ export default function NotificationsPage() {
               read: false,
             });
           }
-          
+
           // If order is ready, add ready notification
           if (order.status === "Ready") {
             const readyDate = new Date(order.updatedAt);
@@ -62,7 +60,7 @@ export default function NotificationsPage() {
               });
             }
           }
-          
+
           // If order is completed, add completed notification
           if (order.status === "Completed") {
             const completedDate = new Date(order.updatedAt);
@@ -79,12 +77,12 @@ export default function NotificationsPage() {
             }
           }
         });
-        
+
         // Sort by timestamp (newest first)
-        generatedNotifications.sort((a, b) => 
+        generatedNotifications.sort((a, b) =>
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         );
-        
+
         setNotifications(generatedNotifications);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -92,17 +90,17 @@ export default function NotificationsPage() {
         setLoading(false);
       }
     }
-    
+
     fetchData();
   }, []);
 
   const unreadCount = notifications.filter(n => !n.read).length;
-  const displayedNotifications = filter === "unread" 
+  const displayedNotifications = filter === "unread"
     ? notifications.filter(n => !n.read)
     : notifications;
 
   const markAsRead = (id: string) => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     );
   };
@@ -141,7 +139,7 @@ export default function NotificationsPage() {
     const now = new Date();
     const date = new Date(timestamp);
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hour ago`;
@@ -177,21 +175,19 @@ export default function NotificationsPage() {
       <div className="flex gap-3">
         <button
           onClick={() => setFilter("all")}
-          className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 active:scale-95 touch-manipulation min-h-[48px] ${
-            filter === "all"
-              ? "bg-gradient-to-r from-[#31a354] to-[#00C300] text-white shadow-lg"
-              : "bg-white/80 text-gray-700 hover:bg-white/90 border border-white/50"
-          }`}
+          className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 active:scale-95 touch-manipulation min-h-[48px] ${filter === "all"
+            ? "bg-gradient-to-r from-[#31a354] to-[#00C300] text-white shadow-lg"
+            : "bg-white/80 text-gray-700 hover:bg-white/90 border border-white/50"
+            }`}
         >
           All ({notifications.length})
         </button>
         <button
           onClick={() => setFilter("unread")}
-          className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 active:scale-95 touch-manipulation min-h-[48px] relative ${
-            filter === "unread"
-              ? "bg-gradient-to-r from-[#31a354] to-[#00C300] text-white shadow-lg"
-              : "bg-white/80 text-gray-700 hover:bg-white/90 border border-white/50"
-          }`}
+          className={`px-6 py-3 rounded-xl font-bold transition-all duration-200 active:scale-95 touch-manipulation min-h-[48px] relative ${filter === "unread"
+            ? "bg-gradient-to-r from-[#31a354] to-[#00C300] text-white shadow-lg"
+            : "bg-white/80 text-gray-700 hover:bg-white/90 border border-white/50"
+            }`}
         >
           Unread ({unreadCount})
           {unreadCount > 0 && (
@@ -226,9 +222,8 @@ export default function NotificationsPage() {
           {displayedNotifications.map((notification, index) => (
             <div
               key={notification.id}
-              className={`bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border-2 border-white/50 p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
-                !notification.read ? "ring-2 ring-[#31a354]/20" : ""
-              }`}
+              className={`bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border-2 border-white/50 p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${!notification.read ? "ring-2 ring-[#31a354]/20" : ""
+                }`}
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex items-start gap-4">
@@ -236,7 +231,7 @@ export default function NotificationsPage() {
                 <div className={`flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br ${getNotificationColor(notification.type)} flex items-center justify-center text-3xl shadow-lg`}>
                   {getNotificationIcon(notification.type)}
                 </div>
-                
+
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-4">
@@ -259,7 +254,7 @@ export default function NotificationsPage() {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Actions */}
                     <div className="flex items-center gap-2">
                       {!notification.read && (

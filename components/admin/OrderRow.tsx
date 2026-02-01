@@ -43,28 +43,16 @@ export default function OrderRow({
     order.paymentStatus === "paid"
       ? "Paid"
       : order.paymentStatus === "pending"
-      ? "Pending"
-      : "Not recorded";
+        ? "Pending"
+        : "Not recorded";
 
   const paymentStatusClass =
     order.paymentStatus === "paid"
       ? "bg-green-100 text-green-800 border-green-300"
       : order.paymentStatus === "pending"
-      ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-      : "bg-gray-100 text-gray-800 border-gray-300";
+        ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+        : "bg-gray-100 text-gray-800 border-gray-300";
 
-  const handleMarkAsPaid = async () => {
-    if (isUpdatingPayment) return;
-    try {
-      setIsUpdatingPayment(true);
-      const updated = await updateOrderPaymentStatus(order._id, "paid");
-      onPaymentStatusChange(order._id, updated.paymentStatus ?? "paid");
-    } catch (error) {
-      console.error("Failed to update payment status:", error);
-    } finally {
-      setIsUpdatingPayment(false);
-    }
-  };
   const handlePaymentSelect = async (value: string) => {
     if (isUpdatingPayment) return;
 
@@ -175,24 +163,24 @@ export default function OrderRow({
                       {isUpdatingPayment ? "Saving..." : "Mark as Paid"}
                     </button>
                   </div>*/
-                    <div className="ml-auto flex flex-col gap-2">
-                      <select
-                        value={paymentSelectValue}
-                        onChange={(e) => handlePaymentSelect(e.target.value)}
-                        disabled={isUpdatingPayment}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-50"
-                      >
-                        <option value="" disabled>
-                          Select payment status
-                        </option>
+                  <div className="ml-auto flex flex-col gap-2">
+                    <select
+                      value={paymentSelectValue}
+                      onChange={(e) => handlePaymentSelect(e.target.value)}
+                      disabled={isUpdatingPayment}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-50"
+                    >
+                      <option value="" disabled>
+                        Select payment status
+                      </option>
 
-                        {PAYMENT_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                        ))}
-                      </select>
-                    </div>
+                      {PAYMENT_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                 )}
               </div>

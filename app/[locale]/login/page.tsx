@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { getLineLoginUrl } from "@/lib/admin-api";
-import { setAuthToken } from "@/lib/admin-api";
 import { useAuth } from "@/lib/auth-context";
 import { useLiff } from "@/lib/liff-provider";
+import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/routing';
 
 function LoginContent() {
+  const t = useTranslations('Login');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { isInLiff, isLiffLoading, liffError } = useLiff();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +59,7 @@ function LoginContent() {
       window.location.href = loginUrl;
     } catch (err) {
       console.error("LINE login error:", err);
-      setError(err instanceof Error ? err.message : "Failed to initiate LINE login");
+      setError(err instanceof Error ? err.message : t('failed'));
       setIsLoading(false);
     }
   };
@@ -66,9 +68,9 @@ function LoginContent() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-md space-y-8 rounded-lg border border-border bg-card p-8 shadow-lg">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground">Welcome</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('title')}</h1>
           <p className="mt-2 text-muted-foreground">
-            {isInLiff ? "Authenticating with LINE..." : "Sign in to continue"}
+            {isInLiff ? t('authenticating') : t('signInToContinue')}
           </p>
         </div>
 
@@ -95,7 +97,7 @@ function LoginContent() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              Initializing LINE authentication...
+              {t('initializing')}
             </div>
           </div>
         )}
@@ -135,7 +137,7 @@ function LoginContent() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Loading...
+                  {t('loading')}
                 </>
               ) : (
                 <>
@@ -151,7 +153,7 @@ function LoginContent() {
                       fill="currentColor"
                     />
                   </svg>
-                  Sign in with LINE
+                  {t('signInWithLine')}
                 </>
               )}
             </button>
@@ -163,10 +165,11 @@ function LoginContent() {
 }
 
 export default function LoginPage() {
+  const t = useTranslations('Login');
   return (
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center">
-        <p>Loading...</p>
+        <p>{t('loading')}</p>
       </div>
     }>
       <LoginContent />
